@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeMaster - Study & Productivity Companion</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #F4F7FA;
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #6A11CB 0%, #2575FC 100%);
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .feature-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .animated-bg {
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Profile Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        /* Profile Icon */
+        .profile-icon {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4169E1;
+            color: white;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+            display: none;
+            position: absolute;
+            top: 70px;
+            right: 5%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem;
+            min-width: 200px;
+        }
+
+        .profile-info {
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-info span {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <header class="sticky top-0 z-50 bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="ri-time-line text-3xl text-blue-600"></i>
+                <span class="text-2xl font-bold text-gray-800">FocusUP</span>
+            </div>
+            <nav>
+                <ul class="flex space-x-6 items-center">
+                    <li><a href="home.html" class="text-gray-700 hover:text-blue-600">Home</a></li>
+                    <li><a href="index.html" class="text-gray-700 hover:text-blue-600">Time Table</a></li>
+                    <li><a href="subjects.html" class="text-gray-700 hover:text-blue-600">Timers</a></li>
+                    <li><a href="auth1.html" class="bg-green-500 px-4 py-2 rounded-full hover:bg-green-600 transition flex items-center space-x-1">Signup/Login</a></li>
+                    <!-- <button class="login-btn" id="showModal">Login</button> -->
+                    <div class="profile-icon" id="profileIcon"></div>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-5xl font-bold mb-6">Master Your Time, Master Your Goals</h1>
+            <p class="text-xl mb-10 max-w-2xl mx-auto">Elevate your productivity with intelligent timers, study tracking, and personalized time management tools.</p>
+            <div class="space-x-4">
+                <a href="subjects.html" class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition">Get Started</a>
+                <a href="#" class="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-blue-600 transition">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">Powerful Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Study Timer -->
+                <div class="feature-card bg-gray-100 p-6 rounded-xl text-center">
+                    <a href="exams.html" class="inline-block">
+                        <i class="ri-book-open-line text-6xl text-blue-600 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-4">Study Timer</h3>
+                        <p class="text-gray-600">Track study sessions, set goals, and monitor your learning progress.</p>
+                    </a>
+                </div>
+
+                <!-- Exam Preparation -->
+                <div class="feature-card bg-gray-100 p-6 rounded-xl text-center">
+                    <a href="subjects.html" class="inline-block">
+                        <i class="ri-government-line text-6xl text-green-600 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-4">Exam Timers</h3>
+                        <p class="text-gray-600">Specialized timers for JEE, UPSC, and competitive exam preparation.</p>
+                    </a>
+                </div>
+
+                <!-- Productivity Tracking -->
+                <div class="feature-card bg-gray-100 p-6 rounded-xl text-center">
+                    <a href="#" class="inline-block">
+                        <i class="ri-bar-chart-line text-6xl text-purple-600 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-4">Track Your Progress</h3>
+                        <p class="text-gray-600">View detailed insights about your study sessions and achievements</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-20 animated-bg" style="background: linear-gradient(45deg, #6A11CB, #2575FC, #10B981, #3B82F6);">
+        <div class="container mx-auto px-4 text-center text-white">
+            <h2 class="text-4xl font-bold mb-6">Start Your Productivity Journey Today</h2>
+            <p class="text-xl mb-10 max-w-2xl mx-auto">Join thousands of students and professionals who have transformed their time management.</p>
+            <a href="#" class="bg-white text-blue-600 px-10 py-4 rounded-full text-lg font-semibold hover:bg-blue-50 transition">Create Free Account</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex justify-center space-x-6 mb-8">
+                <a href="#" class="hover:text-blue-400"><i class="ri-facebook-circle-line text-2xl"></i></a>
+                <a href="#" class="hover:text-blue-400"><i class="ri-twitter-line text-2xl"></i></a>
+                <a href="#" class="hover:text-blue-400"><i class="ri-instagram-line text-2xl"></i></a>
+            </div>
+            <p>&copy; 2024 TimeMaster. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Get all required elements
+        const loginLink = document.querySelector('a.bg-blue-500'); // The tailwind styled login link
+        const loginBtn = document.getElementById('showModal');
+        const modal = document.getElementById('profileModal');
+        const profileForm = document.getElementById('profileForm');
+        const profileIcon = document.getElementById('profileIcon');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        // Function to update navigation elements
+        function updateNavigation(show) {
+            if (show) {
+                // Hide both login buttons
+                loginLink.style.display = 'none';
+                loginBtn.style.display = 'none';
+                // Show profile icon
+                profileIcon.style.display = 'flex';
+            } else {
+                // Show login buttons
+                loginLink.style.display = 'inline-block';
+                loginBtn.style.display = 'inline-block';
+                // Hide profile icon
+                profileIcon.style.display = 'none';
+            }
+        }
+
+        // Show modal on either login button click
+        loginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+
+        loginBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Get initials from name
+        function getInitials(name) {
+            return name
+                .split(' ')
+                .map(word => word[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
+
+        // Handle form submission
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const profileData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value
+            };
+
+            // Save to localStorage
+            localStorage.setItem('profileData', JSON.stringify(profileData));
+
+            // Update display
+            updateProfileDisplay(profileData);
+            
+            // Update navigation
+            updateNavigation(true);
+            profileIcon.textContent = getInitials(profileData.name);
+            
+            // Close modal
+            modal.style.display = 'none';
+        });
+
+        // Toggle dropdown on icon click
+        profileIcon.addEventListener('click', () => {
+            const isVisible = profileDropdown.style.display === 'block';
+            profileDropdown.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!profileIcon.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.style.display = 'none';
+            }
+        });
+
+        // Update profile display
+        function updateProfileDisplay(data) {
+            document.getElementById('displayName').textContent = data.name;
+            document.getElementById('displayEmail').textContent = data.email;
+            document.getElementById('displayPhone').textContent = data.phone;
+            document.getElementById('displayAddress').textContent = data.address;
+        }
+
+        // Load saved profile on page load
+        window.addEventListener('load', () => {
+            const savedData = JSON.parse(localStorage.getItem('profileData') || '{}');
+            if (savedData.name) {
+                updateNavigation(true);
+                profileIcon.textContent = getInitials(savedData.name);
+                updateProfileDisplay(savedData);
+            } else {
+                updateNavigation(false);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Timetable Generator</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+
+        .app-description {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .setup-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-add {
+            background: var(--success-color);
+        }
+
+        .btn-add:hover {
+            background: #27ae60;
+        }
+
+        .btn-remove {
+            background: #e74c3c;
+        }
+
+        .btn-remove:hover {
+            background: #c0392b;
+        }
+
+        .subjects-list {
+            margin-top: 20px;
+        }
+
+        .subject-item {
+            display: flex;
+            align-items: center;
+            background: var(--light-color);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .subject-details {
+            flex-grow: 1;
+        }
+
+        .subject-name {
+            font-weight: 600;
+        }
+
+        .subject-level {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .timetable {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: var(--dark-color);
+            color: white;
+        }
+
+        .time-slot {
+            font-weight: 600;
+            background: #f8f9fa;
+        }
+
+        .subject-cell {
+            position: relative;
+            min-height: 80px;
+            transition: background 0.3s;
+        }
+
+        .subject-cell:hover {
+            background: #f5f5f5;
+        }
+
+        .print-btn {
+            margin-top: 20px;
+            background: var(--dark-color);
+        }
+
+        .print-btn:hover {
+            background: #2c3e50;
+        }
+
+        .subject-cell.level-basic {
+            background-color: #d1f2eb;
+        }
+
+        .subject-cell.level-intermediate {
+            background-color: #d6eaf8;
+        }
+
+        .subject-cell.level-advanced {
+            background-color: #e8daef;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .basic-color {
+            background-color: #d1f2eb;
+        }
+
+        .intermediate-color {
+            background-color: #d6eaf8;
+        }
+
+        .advanced-color {
+            background-color: #e8daef;
+        }
+
+        @media print {
+            .setup-panel, .print-btn {
+                display: none;
+            }
+            .container {
+                width: 100%;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .subject-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .btn-remove {
+                margin-top: 10px;
+            }
+        }
+
+        /*Add this CSS to the style section*/
+
+        .auth-panel {
+            margin-bottom: 20px;
+        }
+        
+        .buttons-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-secondary {
+            background: var(--dark-color);
+        }
+        
+        .btn-secondary:hover {
+            background: #2c3e50;
+        }
+        
+        .saved-timetable-item {
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .saved-timetable-item:hover {
+            background: #dfe4ea;
+        }
+        
+        .saved-timetable-name {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .saved-timetable-date {
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        #timetable-name-input {
+            margin-bottom: 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding-top: 40px;
+            }
+        }
+
+        @media print {
+            .setup-panel, .print-btn, .back-button {
+                display: none;
+            }
+        }
+        
+        .back-button {
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: var(--dark-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+        }
+        
+        .back-button:hover {
+            background: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="subjects.html" class="back-button">← Back to Subjects</a>
+        <header>
+            <h1>Generate Your Timetable</h1>
+            <p class="app-description">Create your personalized weekly timetable by adding subjects and their difficulty levels. The system will generate an optimized schedule for your studies.</p>
+        </header>
+
+        <div class="setup-panel">
+            <div class="form-group">
+                <label for="subject-name">Subject Name</label>
+                <input type="text" id="subject-name" placeholder="Enter subject name">
+            </div>
+            <div class="form-group">
+                <label for="subject-level">Difficulty Level</label>
+                <select id="subject-level">
+                    <option value="basic">Basic</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="hours-per-week">Hours Per Week</label>
+                <select id="hours-per-week">
+                    <option value="1">1 hour</option>
+                    <option value="2">2 hours</option>
+                    <option value="3">3 hours</option>
+                    <option value="4">4 hours</option>
+                    <option value="5">5 hours</option>
+                </select>
+            </div>
+            <button class="btn btn-add" id="add-subject">Add Subject</button>
+
+            <div class="subjects-list" id="subjects-list"></div>
+        </div>
+
+        <button class="btn" id="generate-btn">Generate Timetable</button>
+
+        <div id="timetable-container" style="display: none;">
+            <div class="timetable">
+                <table id="timetable">
+                    <thead>
+                        <tr>
+                            <th>Time / Day</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body">
+                        <!-- Timetable will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box basic-color"></div>
+                    <span>Basic</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box intermediate-color"></div>
+                    <span>Intermediate</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box advanced-color"></div>
+                    <span>Advanced</span>
+                </div>
+            </div>
+
+            <button class="btn print-btn" id="print-btn">Print Timetable</button>
+        </div>
+        <!-- Add these elements to the HTML, just before the closing </div> of container -->
+
+        <div class="auth-panel setup-panel" id="auth-panel">
+            <h2>Login or Register</h2>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <div class="form-group" id="email-group" style="display: none;">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="buttons-group">
+                <button class="btn" id="login-btn">Login</button>
+                <button class="btn btn-secondary" id="register-toggle">Switch to Register</button>
+            </div>
+        </div>
+
+        <div class="saved-timetables setup-panel" id="saved-timetables" style="display: none;">
+            <h2>Your Saved Timetables</h2>
+            <div id="timetables-list"></div>
+        </div>
+
+        <div class="action-buttons" id="user-actions" style="display: none;">
+            <button class="btn btn-success" id="save-timetable">Save Timetable</button>
+            <button class="btn btn-secondary" id="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Move subjects to global scope
+        let subjects = [];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const timeSlots = ['9:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', 
+                          '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00'];
+        
+        // Define these functions in global scope
+        function updateSubjectsList() {
+            const listElement = document.getElementById('subjects-list');
+            listElement.innerHTML = '';
+            
+            subjects.forEach((subject, index) => {
+                const item = document.createElement('div');
+                item.className = 'subject-item';
+                
+                const details = document.createElement('div');
+                details.className = 'subject-details';
+                
+                const name = document.createElement('div');
+                name.className = 'subject-name';
+                name.textContent = subject.name;
+                
+                const info = document.createElement('div');
+                info.className = 'subject-level';
+                info.textContent = `${capitalize(subject.level)} • ${subject.hours} hours per week`;
+                
+                details.appendChild(name);
+                details.appendChild(info);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'btn btn-remove';
+                removeBtn.textContent = 'Remove';
+                removeBtn.onclick = function() {
+                    subjects.splice(index, 1);
+                    updateSubjectsList();
+                };
+                
+                item.appendChild(details);
+                item.appendChild(removeBtn);
+                listElement.appendChild(item);
+            });
+        }
+        
+        function generateTimetable() {
+            const timetableBody = document.getElementById('timetable-body');
+            timetableBody.innerHTML = '';
+            
+            // Create the timetable grid
+            const timetable = createEmptyTimetable();
+            
+            // Sort subjects by level difficulty and hours
+            const sortedSubjects = [...subjects].sort((a, b) => {
+                const levelOrder = { 'advanced': 3, 'intermediate': 2, 'basic': 1 };
+                if (levelOrder[a.level] !== levelOrder[b.level]) {
+                    return levelOrder[b.level] - levelOrder[a.level];
+                }
+                return b.hours - a.hours;
+            });
+            
+            // Distribute subjects across the timetable
+            distributeSubjects(timetable, sortedSubjects);
+            
+            // Render the timetable
+            renderTimetable(timetable);
+        }
+    
+        // Move helper functions to global scope
+        function createEmptyTimetable() {
+            const timetable = [];
+            for (let i = 0; i < timeSlots.length; i++) {
+                timetable[i] = Array(days.length).fill(null);
+            }
+            return timetable;
+        }
+        
+        function distributeSubjects(timetable, subjectsList) {
+            subjectsList.forEach(subject => {
+                let remainingHours = subject.hours;
+                
+                // Try to distribute evenly across days
+                while (remainingHours > 0) {
+                    let placed = false;
+                    
+                    // Find best slot for this subject
+                    for (let timeIndex = 0; timeIndex < timeSlots.length && !placed; timeIndex++) {
+                        const preferredDayOrder = getPreferredDayOrder(subject.level);
+                        
+                        for (let dayOrderIndex = 0; dayOrderIndex < preferredDayOrder.length && !placed; dayOrderIndex++) {
+                            const dayIndex = preferredDayOrder[dayOrderIndex];
+                            
+                            if (timetable[timeIndex][dayIndex] === null) {
+                                timetable[timeIndex][dayIndex] = subject;
+                                remainingHours--;
+                                placed = true;
+                            }
+                        }
+                    }
+                    
+                    if (!placed) {
+                        // Fallback: find any available slot
+                        outerLoop:
+                        for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
+                            for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+                                if (timetable[timeIndex][dayIndex] === null) {
+                                    timetable[timeIndex][dayIndex] = subject;
+                                    remainingHours--;
+                                    break outerLoop;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we can't place any more, break
+                    if (!placed) break;
+                }
+            });
+        }
+        
+        function getPreferredDayOrder(level) {
+            // Different subjects are better studied at different times of the week
+            switch (level) {
+                case 'advanced':
+                    return [0, 1, 2, 3, 4]; // Spread throughout the week
+                case 'intermediate':
+                    return [1, 3, 0, 2, 4]; // Mid-week focus
+                case 'basic':
+                    return [0, 4, 1, 3, 2]; // Beginning and end of week
+                default:
+                    return [0, 1, 2, 3, 4];
+            }
+        }
+        
+        function renderTimetable(timetable) {
+            const timetableBody = document.getElementById('timetable-body');
+            
+            timeSlots.forEach((timeSlot, timeIndex) => {
+                const row = document.createElement('tr');
+                
+                // Add time slot
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-slot';
+                timeCell.textContent = timeSlot;
+                row.appendChild(timeCell);
+                
+                // Add each day's subject
+                days.forEach((day, dayIndex) => {
+                    const cell = document.createElement('td');
+                    const subject = timetable[timeIndex][dayIndex];
+                    
+                    if (subject) {
+                        cell.className = `subject-cell level-${subject.level}`;
+                        
+                        const subjectName = document.createElement('div');
+                        subjectName.className = 'cell-subject-name';
+                        subjectName.textContent = subject.name;
+                        
+                        const subjectLevel = document.createElement('div');
+                        subjectLevel.className = 'cell-subject-level';
+                        subjectLevel.textContent = capitalize(subject.level);
+                        
+                        cell.appendChild(subjectName);
+                        cell.appendChild(subjectLevel);
+                    } else {
+                        cell.className = 'subject-cell';
+                        cell.textContent = 'Free';
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                timetableBody.appendChild(row);
+            });
+        }
+        
+        // Helper functions
+        function clearInputs() {
+            document.getElementById('subject-name').value = '';
+            document.getElementById('subject-level').selectedIndex = 0;
+            document.getElementById('hours-per-week').selectedIndex = 0;
+        }
+        
+        function capitalize(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+    
+        // Auth state variables
+        let currentUser = null;
+        let token = null;
+    
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add subject to the list
+            document.getElementById('add-subject').addEventListener('click', function() {
+                const subjectName = document.getElementById('subject-name').value.trim();
+                const subjectLevel = document.getElementById('subject-level').value;
+                const hoursPerWeek = parseInt(document.getElementById('hours-per-week').value);
+                
+                if (!subjectName) {
+                    alert('Please enter a subject name');
+                    return;
+                }
+                
+                subjects.push({
+                    name: subjectName,
+                    level: subjectLevel,
+                    hours: hoursPerWeek
+                });
+                
+                updateSubjectsList();
+                clearInputs();
+            });
+            
+            // Generate timetable
+            document.getElementById('generate-btn').addEventListener('click', function() {
+                if (subjects.length === 0) {
+                    alert('Please add at least one subject');
+                    return;
+                }
+                
+                generateTimetable();
+                document.getElementById('timetable-container').style.display = 'block';
+            });
+            
+            // Print timetable
+            document.getElementById('print-btn').addEventListener('click', function() {
+                window.print();
+            });
+    
+            // Check for saved token on load
+            const savedToken = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
+            
+            if (savedToken && savedUser) {
+                token = savedToken;
+                currentUser = JSON.parse(savedUser);
+                showLoggedInState();
+                fetchSavedTimetables();
+            }
+            
+            // Register toggle button
+            document.getElementById('register-toggle').addEventListener('click', function() {
+                const isRegistering = this.textContent === 'Switch to Register';
+                document.getElementById('email-group').style.display = isRegistering ? 'block' : 'none';
+                document.getElementById('login-btn').textContent = isRegistering ? 'Register' : 'Login';
+                this.textContent = isRegistering ? 'Switch to Login' : 'Switch to Register';
+            });
+            
+            // Login/Register button
+            document.getElementById('login-btn').addEventListener('click', async function() {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const isRegistering = this.textContent === 'Register';
+                
+                if (!username || !password) {
+                    alert('Please enter both username and password');
+                    return;
+                }
+                
+                try {
+                    if (isRegistering) {
+                        const email = document.getElementById('email').value.trim();
+                        if (!email) {
+                            alert('Please enter an email address');
+                            return;
+                        }
+                        
+                        const response = await fetch('/api/users/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, password, email })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Registration failed');
+                        }
+                        
+                        currentUser = data.user;
+                        token = data.token;
+                    } else {
+                        const response = await fetch('/api/users/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, password })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Login failed');
+                        }
+                        
+                        currentUser = data.user;
+                        token = data.token;
+                    }
+                    
+                    // Save auth state
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    
+                    showLoggedInState();
+                    fetchSavedTimetables();
+                    
+                } catch (error) {
+                    alert(error.message);
+                }
+            });
+            
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                currentUser = null;
+                token = null;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                showLoggedOutState();
+            });
+            
+            // Save timetable button
+            document.getElementById('save-timetable').addEventListener('click', async function() {
+                if (subjects.length === 0) {
+                    alert('Please add at least one subject before saving');
+                    return;
+                }
+                
+                const timetableName = prompt('Enter a name for this timetable:', 'My Timetable');
+                
+                if (!timetableName) return;
+                
+                try {
+                    const response = await fetch('/api/timetables', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            name: timetableName,
+                            subjects: subjects
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to save timetable');
+                    }
+                    
+                    alert('Timetable saved successfully!');
+                    fetchSavedTimetables();
+                    
+                } catch (error) {
+                    alert(error.message);
+                    console.error('Error saving timetable:', error);
+                }
+            });
+        });
+        
+        // Helper functions for auth state
+        function showLoggedInState() {
+            document.getElementById('auth-panel').style.display = 'none';
+            document.getElementById('saved-timetables').style.display = 'block';
+            document.getElementById('user-actions').style.display = 'flex';
+        }
+        
+        function showLoggedOutState() {
+            document.getElementById('auth-panel').style.display = 'block';
+            document.getElementById('saved-timetables').style.display = 'none';
+            document.getElementById('user-actions').style.display = 'none';
+        }
+        
+        // Fetch and display saved timetables
+        async function fetchSavedTimetables() {
+            try {
+                const response = await fetch('/api/timetables', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch timetables');
+                }
+                
+                const timetables = await response.json();
+                
+                const listElement = document.getElementById('timetables-list');
+                listElement.innerHTML = '';
+                
+                if (timetables.length === 0) {
+                    listElement.innerHTML = '<p>You have no saved timetables yet.</p>';
+                    return;
+                }
+                
+                timetables.forEach(timetable => {
+                    const item = document.createElement('div');
+                    item.className = 'saved-timetable-item';
+                    item.dataset.id = timetable._id;
+                    
+                    const name = document.createElement('div');
+                    name.className = 'saved-timetable-name';
+                    name.textContent = timetable.name;
+                    
+                    const date = document.createElement('div');
+                    date.className = 'saved-timetable-date';
+                    date.textContent = `Last updated: ${new Date(timetable.updatedAt).toLocaleString()}`;
+                    
+                    item.appendChild(name);
+                    item.appendChild(date);
+                    
+                    item.addEventListener('click', () => loadTimetable(timetable));
+                    
+                    listElement.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error('Error fetching timetables:', error);
+            }
+        }
+        
+        // Load a saved timetable
+        function loadTimetable(timetable) {
+            // Clear current subjects
+            subjects.length = 0;
+            
+            // Add saved subjects
+            timetable.subjects.forEach(subject => {
+                subjects.push({
+                    name: subject.name,
+                    level: subject.level,
+                    hours: subject.hours
+                });
+            });
+            
+            // Update UI
+            updateSubjectsList();
+            
+            // Generate timetable
+            generateTimetable();
+            document.getElementById('timetable-container').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

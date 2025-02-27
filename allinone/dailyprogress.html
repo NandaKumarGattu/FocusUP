@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Study Timer & Analytics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f6f8fc 0%, #e9f0f7 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8">
+    <div class="container mx-auto px-4">
+        <div class="glass-effect rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 id="subjectTitle" class="text-4xl font-bold text-gray-800 tracking-tight"></h1>
+                <div class="flex items-center space-x-2">
+                    <span id="focusScore" class="text-lg font-semibold text-blue-600">Focus Score: 0</span>
+                    <div class="w-3 h-3 rounded-full" id="focusIndicator"></div>
+                </div>
+            </div>
+
+            <!-- Timer and Controls Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="flex flex-col items-center">
+                    <div class="relative w-48 h-48 mb-6">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+                            <circle id="timerRing" class="progress-ring" cx="50" cy="50" r="45" fill="none" stroke="#3b82f6" stroke-width="5" stroke-dasharray="282.7" stroke-dashoffset="282.7"/>
+                        </svg>
+                        <div id="display" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl font-mono font-bold text-blue-600">
+                            00:00:00
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button id="startBtn" class="flex items-center px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition transform hover:scale-105 focus:outline-none focus:ring-2">
+                            <i class="ri-play-fill mr-2"></i>Start
+                        </button>
+                        <button id="stopBtn" class="flex items-center px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition transform hover:scale-105 focus:outline-none focus:ring-2" disabled>
+                            <i class="ri-stop-fill mr-2"></i>Stop
+                        </button>
+                        <button id="resetBtn" class="flex items-center px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition transform hover:scale-105 focus:outline-none focus:ring-2">
+                            <i class="ri-refresh-line mr-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <div class="mb-6">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-medium text-blue-700">Daily Goal Progress</span>
+                            <span id="progressPercentage" class="text-sm font-medium text-blue-700">0%</span>
+                        </div>
+                        <div class="w-full bg-blue-100 rounded-full h-4">
+                            <div id="progressBar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-xl">
+                            <h3 class="font-semibold text-gray-600 mb-2">Efficiency Score</h3>
+                            <p id="efficiencyScore" class="text-2xl font-bold text-blue-600">0%</p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-xl">
+                            <h3 class="font-semibold text-gray-600 mb-2">Focus Time</h3>
+                            <p id="focusTime" class="text-2xl font-bold text-blue-600">0 min</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">Study Statistics</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-600">Total Time</p>
+                            <p id="totalTimeDisplay" class="text-xl font-bold text-gray-800">00:00:00</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Last Session</p>
+                            <p id="lastSessionDisplay" class="text-xl font-bold text-gray-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Best Streak</p>
+                            <p id="bestStreakDisplay" class="text-xl font-bold text-gray-800">0 days</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Current Streak</p>
+                            <p id="currentStreakDisplay" class="text-xl font-bold text-gray-800">0 days</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">Weekly Progress</h3>
+                    <canvas id="weeklyChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class StudyMetrics {
+            constructor() {
+                this.focusScore = 0;
+                this.efficiencyScore = 0;
+                this.focusTime = 0;
+                this.distractions = 0;
+                this.lastActiveTime = Date.now();
+                
+                // Monitor user activity
+                document.addEventListener('mousemove', () => this.updateActivity());
+                document.addEventListener('keypress', () => this.updateActivity());
+                document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
+            }
+
+            updateActivity() {
+                const now = Date.now();
+                const timeSinceLastActive = now - this.lastActiveTime;
+                
+                if (timeSinceLastActive > 5000) { // Consider as distraction if inactive for 5s
+                    this.distractions++;
+                    this.updateFocusScore();
+                }
+                
+                this.lastActiveTime = now;
+            }
+
+            handleVisibilityChange() {
+                if (document.hidden) {
+                    this.distractions++;
+                    this.updateFocusScore();
+                }
+            }
+
+            updateFocusScore() {
+                const baseScore = 100;
+                const penaltyPerDistraction = 5;
+                this.focusScore = Math.max(0, baseScore - (this.distractions * penaltyPerDistraction));
+                
+                document.getElementById('focusScore').textContent = `Focus Score: ${this.focusScore}`;
+                const indicator = document.getElementById('focusIndicator');
+                
+                if (this.focusScore > 80) {
+                    indicator.className = 'w-3 h-3 rounded-full bg-green-500';
+                } else if (this.focusScore > 50) {
+                    indicator.className = 'w-3 h-3 rounded-full bg-yellow-500';
+                } else {
+                    indicator.className = 'w-3 h-3 rounded-full bg-red-500';
+                }
+            }
+
+            updateEfficiencyScore(studyDuration) {
+                const expectedDuration = 25 * 60; // 25 minutes (Pomodoro-style)
+                const efficiency = Math.min(100, (studyDuration / expectedDuration) * 100);
+                this.efficiencyScore = Math.round(efficiency * (this.focusScore / 100));
+                
+                document.getElementById('efficiencyScore').textContent = `${this.efficiencyScore}%`;
+            }
+
+            incrementFocusTime() {
+                this.focusTime++;
+                document.getElementById('focusTime').textContent = `${Math.round(this.focusTime / 60)} min`;
+            }
+
+            reset() {
+                this.focusScore = 100;
+                this.efficiencyScore = 0;
+                this.focusTime = 0;
+                this.distractions = 0;
+                this.updateFocusScore();
+                document.getElementById('efficiencyScore').textContent = '0%';
+                document.getElementById('focusTime').textContent = '0 min';
+            }
+        }
+
+        class SubjectProgressTracker {
+            constructor(subjectName) {
+                this.subject = subjectName;
+                this.dailyGoal = 3600; // 1 hour in seconds
+                this.today = new Date().toLocaleDateString();
+                this.loadData();
+                
+                document.getElementById('subjectTitle').textContent = this.subject;
+            }
+            
+            loadData() {
+                const storageKey = `studyProgress_${this.subject}`;
+                const savedData = localStorage.getItem(storageKey);
+                
+                if (savedData) {
+                    this.data = JSON.parse(savedData);
+                } else {
+                    this.data = {
+                        totalTime: 0,
+                        lastSession: null,
+                        sessions: {},
+                        streakData: {
+                            currentStreak: 0,
+                            bestStreak: 0,
+                            lastStudyDate: null
+                        }
+                    };
+                }
+                
+                this.updateStatisticsDisplay();
+            }
+            
+            saveData() {
+                const storageKey = `studyProgress_${this.subject}`;
+                localStorage.setItem(storageKey, JSON.stringify(this.data));
+            }
+            
+            logStudySession(duration) {
+                this.data.totalTime += duration;
+                this.data.lastSession = new Date().toISOString();
+                
+                // Track daily sessions
+                if (!this.data.sessions[this.today]) {
+                    this.data.sessions[this.today] = 0;
+                }
+                this.data.sessions[this.today] += duration;
+                
+                // Update streak
+                this.updateStreak();
+                
+                this.saveData();
+                this.updateStatisticsDisplay();
+            }
+            
+            updateStreak() {
+                const today = new Date();
+                const lastDate = this.data.streakData.lastStudyDate ? 
+                    new Date(this.data.streakData.lastStudyDate) : null;
+                
+                if (!lastDate) {
+                    this.data.streakData.currentStreak = 1;
+                } else {
+                    const diffTime = Math.abs(today - lastDate);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 1) {
+                        // Continue streak
+                        this.data.streakData.currentStreak++;
+                    } else {
+                        // Reset streak
+                        this.data.streakData.currentStreak = 1;
+                    }
+                }
+                
+                if (this.data.streakData.currentStreak > this.data.streakData.bestStreak) {
+                    this.data.streakData.bestStreak = this.data.streakData.currentStreak;
+                }
+                
+                this.data.streakData.lastStudyDate = today.toISOString();
+            }
+            
+            updateStatisticsDisplay() {
+                document.getElementById('totalTimeDisplay').textContent = 
+                    this.formatTime(this.data.totalTime * 1000);
+                
+                document.getElementById('lastSessionDisplay').textContent = 
+                    this.data.lastSession ? new Date(this.data.lastSession).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-';
+                
+                document.getElementById('bestStreakDisplay').textContent = 
+                    `${this.data.streakData.bestStreak} days`;
+                
+                document.getElementById('currentStreakDisplay').textContent = 
+                    `${this.data.streakData.currentStreak} days`;
+                
+                // Update progress bar
+                const todayProgress = this.data.sessions[this.today] || 0;
+                const progressPercent = Math.min(100, Math.round((todayProgress / this.dailyGoal) * 100));
+                document.getElementById('progressBar').style.width = `${progressPercent}%`;
+                document.getElementById('progressPercentage').textContent = `${progressPercent}%`;
+            }
+            
+            getWeeklyProgress() {
+                const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const today = new Date();
+                const data = [];
+                
+                for (let i = 6; i >= 0; i--) {
+                    const day = new Date(today);
+                    day.setDate(today.getDate() - i);
+                    const dateStr = day.toLocaleDateString();
+                    const hours = ((this.data.sessions[dateStr] || 0) / 3600).toFixed(1);
+                    data.push(hours);
+                }
+                
+                return data;
+            }
+            
+            formatTime(milliseconds) {
+                const totalSeconds = Math.floor(milliseconds / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        class StudyTimer extends StudyMetrics {
+            constructor(subjectName) {
+                super();
+                this.display = document.getElementById('display');
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.timerRing = document.getElementById('timerRing');
+                this.elapsedTime = 0;
+                
+                this.progressTracker = new SubjectProgressTracker(subjectName);
+                this.setupEventListeners();
+                this.updateProgressDisplay();
+                this.initializeChart();
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.stopBtn.addEventListener('click', () => this.stop());
+                this.resetBtn.addEventListener('click', () => this.reset());
+            }
+
+            start() {
+                this.startTime = Date.now() - (this.elapsedTime || 0);
+                this.timerInterval = setInterval(() => {
+                    this.updateDisplay();
+                    this.incrementFocusTime();
+                }, 1000);
+                
+                this.startBtn.disabled = true;
+                this.stopBtn.disabled = false;
+                this.startBtn.classList.add('opacity-50');
+                this.stopBtn.classList.remove('opacity-50');
+            }
+
+            stop() {
+                clearInterval(this.timerInterval);
+                this.elapsedTime = Date.now() - this.startTime;
+                const duration = Math.floor(this.elapsedTime / 1000);
+                
+                // Check for chapter data
+                const chaptersKey = `${this.subject}_chapters`;
+                const chaptersData = localStorage.getItem(chaptersKey);
+                if (chaptersData) {
+                    const chapters = JSON.parse(chaptersData);
+                    const currentChapter = localStorage.getItem(`${this.subject}_currentChapter`);
+                    const currentTopic = localStorage.getItem(`${this.subject}_currentTopic`);
+                    
+                    if (currentChapter !== null) {
+                        if (currentTopic === null) {
+                            if (!chapters[currentChapter].timeSpent) {
+                                chapters[currentChapter].timeSpent = 0;
+                            }
+                            chapters[currentChapter].timeSpent += duration;
+                        } else {
+                            if (!chapters[currentChapter].topics[currentTopic].timeSpent) {
+                                chapters[currentChapter].topics[currentTopic].timeSpent = 0;
+                            }
+                            chapters[currentChapter].topics[currentTopic].timeSpent += duration;
+                        }
+                        localStorage.setItem(chaptersKey, JSON.stringify(chapters));
+                    }
+                }
+                
+                this.updateEfficiencyScore(duration);
+                this.progressTracker.logStudySession(duration);
+                this.updateProgressDisplay();
+                this.updateChart();
+                
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.startBtn.classList.remove('opacity-50');
+                this.stopBtn.classList.add('opacity-50');
+            }
+
+            reset() {
+                clearInterval(this.timerInterval);
+                this.display.textContent = '00:00:00';
+                this.elapsedTime = 0;
+                this.timerRing.style.strokeDashoffset = 282.7;
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+                this.startBtn.classList.remove('opacity-50');
+                this.stopBtn.classList.add('opacity-50');
+                super.reset();
+            }
+
+            updateDisplay() {
+                const currentTime = Date.now() - this.startTime;
+                this.display.textContent = this.formatTime(currentTime);
+                
+                // Update progress ring
+                const progress = (currentTime % (60 * 60 * 1000)) / (60 * 60 * 1000);
+                const circumference = 282.7;
+                this.timerRing.style.strokeDashoffset = circumference * (1 - progress);
+            }
+
+            formatTime(milliseconds) {
+                const totalSeconds = Math.floor(milliseconds / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateProgressDisplay() {
+                // This method is a placeholder for any additional progress displays
+                // The SubjectProgressTracker handles most of the display updates
+            }
+
+            initializeChart() {
+                const ctx = document.getElementById('weeklyChart').getContext('2d');
+                this.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Study Time (hours)',
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateChart() {
+                const weeklyData = this.progressTracker.getWeeklyProgress();
+                this.chart.data.datasets[0].data = weeklyData;
+                this.chart.update();
+            }
+        }
+
+        // Initialize with subject from URL
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const subject = urlParams.get('subject') || 'General Study';
+            
+            // Initialize the timer with the subject
+            window.studyTimer = new StudyTimer(subject);
+        });
+    </script>  
+</body>
+</html>

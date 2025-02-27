@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Timer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        .card-transition {
+            transition: all 0.3s ease;
+        }
+        
+        .card-transition:hover {
+            transform: translateY(-2px);
+        }
+        
+        .timer-display {
+            font-family: monospace;
+            font-size: 3.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-ring {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .floating-card {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .chapter-accordion {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        
+        .chapter-accordion.open {
+            max-height: 500px;
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+        }
+        
+        .gradient-button:hover {
+            background: linear-gradient(135deg, #4338ca, #2563eb);
+        }
+
+        .custom-input {
+            background: #F1F5F9;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-input:focus {
+            background: white;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #E2E8F0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+        
+        .progress-value {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #8B5CF6);
+            transition: width 0.5s ease;
+        }
+        
+        .chapter-number {
+            min-width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #EEF2FF;
+            color: #4F46E5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .topic-number {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #F3F4F6;
+            color: #6366F1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #4F46E5, #2563EB);
+        }
+        
+        .stats-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="sticky top-0 z-50 gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="ri-focus-3-line text-3xl"></i>
+                <span class="text-2xl font-bold">FocusUP</span>
+            </div>
+            <nav class="flex items-center space-x-4">
+                <a href="subjects.html" class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-full hover:bg-opacity-30 transition">
+                    <i class="ri-home-4-line"></i>
+                    <span>Back to Subjects</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-900 mb-2" id="subjectTitle">Loading...</h1>
+            <p class="text-gray-600" id="subjectDescription"></p>
+        </div>
+        
+        <!-- Statistics Section -->
+        <div class="max-w-4xl mx-auto mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="stats-card bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                <div class="text-indigo-500 mb-2">
+                    <i class="ri-time-line text-3xl"></i>
+                </div>
+                <h3 class="text-gray-700 font-medium">Total Study Time</h3>
+                <p class="text-2xl font-bold text-indigo-800" id="totalStudyTime">00:00:00</p>
+            </div>
+            <div class="stats-card bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                <div class="text-indigo-500 mb-2">
+                    <i class="ri-fire-line text-3xl"></i>
+                </div>
+                <h3 class="text-gray-700 font-medium">Current Streak</h3>
+                <p class="text-2xl font-bold text-indigo-800" id="currentStreak">0 days</p>
+            </div>
+            <div class="stats-card bg-white rounded-xl shadow p-4 flex flex-col items-center">
+                <div class="text-indigo-500 mb-2">
+                    <i class="ri-checkbox-circle-line text-3xl"></i>
+                </div>
+                <h3 class="text-gray-700 font-medium">Completion Rate</h3>
+                <p class="text-2xl font-bold text-indigo-800" id="completionRate">0%</p>
+            </div>
+        </div>
+
+        <!-- Chapter Management Section -->
+        <div class="max-w-3xl mx-auto mb-8 bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-800">Chapters</h2>
+                <div class="flex space-x-3">
+                    <button onclick="reorderChapters()" class="text-indigo-600 px-3 py-1 rounded border border-indigo-600 hover:bg-indigo-50 transition flex items-center space-x-1">
+                        <i class="ri-sort-asc"></i>
+                        <a href="ala.html"><span>Audio</span></a>
+                    </button>
+                    <button onclick="openAddChapterModal()" class="gradient-button text-white px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                        <i class="ri-add-line"></i>
+                        <span>Add Chapter</span>
+                    </button>
+                </div>
+            </div>
+            <div class="mb-4 w-full">
+                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                    <span>Overall Progress</span>
+                    <span id="overallProgressText">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-value" id="overallProgressBar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="chaptersList" class="space-y-4">
+                <!-- Chapters will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <div class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium" id="currentChapterTag">
+                    Not studying
+                </div>
+            </div>
+            <div class="timer-display mb-8" id="timer">00:00:00</div>
+            <div class="flex justify-center space-x-4">
+                <button id="startBtn" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition flex items-center space-x-2">
+                    <i class="ri-play-line"></i>
+                    <span>Start</span>
+                </button>
+                <button id="pauseBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition flex items-center space-x-2" disabled>
+                    <i class="ri-pause-line"></i>
+                    <span>Pause</span>
+                </button>
+                <button id="stopBtn" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition flex items-center space-x-2" disabled>
+                    <i class="ri-stop-line"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Chapter Modal -->
+    <div id="addChapterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-indigo-800">Add New Chapter</h3>
+            <form id="addChapterForm" onsubmit="addNewChapter(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="chapterName">
+                        Chapter Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="chapterName" 
+                           type="text" 
+                           required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="chapterDescription">
+                        Description (optional)
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                              id="chapterDescription" 
+                              rows="3"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="estimatedTime">
+                        Estimated Study Time (minutes)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="estimatedTime" 
+                           type="number"
+                           min="0"
+                           placeholder="60"
+                           value="60">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" 
+                            onclick="closeAddChapterModal()" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="gradient-button text-white px-4 py-2 rounded hover:opacity-90 transition">
+                        Add Chapter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Topic Modal -->
+    <div id="addTopicModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-indigo-800">Add New Topic</h3>
+            <form id="addTopicForm" onsubmit="addNewTopic(event)">
+                <input type="hidden" id="parentChapterIndex">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="topicName">
+                        Topic Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="topicName" 
+                           type="text" 
+                           required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="topicDescription">
+                        Description (optional)
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                              id="topicDescription" 
+                              rows="2"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="topicEstimatedTime">
+                        Estimated Study Time (minutes)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="topicEstimatedTime" 
+                           type="number"
+                           min="0"
+                           placeholder="30"
+                           value="30">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" 
+                            onclick="closeAddTopicModal()" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="gradient-button text-white px-4 py-2 rounded hover:opacity-90 transition">
+                        Add Topic
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Chapter/Topic Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-indigo-800" id="editModalTitle">Edit</h3>
+            <form id="editForm" onsubmit="saveEdit(event)">
+                <input type="hidden" id="editChapterIndex">
+                <input type="hidden" id="editTopicIndex">
+                <input type="hidden" id="editType">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editName">
+                        Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="editName" 
+                           type="text" 
+                           required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editDescription">
+                        Description
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                              id="editDescription" 
+                              rows="2"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editEstimatedTime">
+                        Estimated Study Time (minutes)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="editEstimatedTime" 
+                           type="number"
+                           min="0">
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" 
+                            onclick="confirmDelete()" 
+                            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
+                        Delete
+                    </button>
+                    <div class="flex space-x-4">
+                        <button type="button" 
+                                onclick="closeEditModal()" 
+                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="gradient-button text-white px-4 py-2 rounded hover:opacity-90 transition">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Get subject from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const subject = urlParams.get('subject');
+        const chaptersList = document.getElementById('chaptersList');
+        const currentChapterTag = document.getElementById('currentChapterTag');
+        
+        // Update title
+        document.getElementById('subjectTitle').textContent = subject || 'Study Timer';
+        
+        // Timer functionality
+        let timer;
+        let isRunning = false;
+        let seconds = 0;
+        let currentChapter = null;
+        let currentTopic = null;
+        const timerDisplay = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Daily progress data
+        let dailyProgressData = {
+            totalTime: 0,
+            lastSession: null,
+            sessions: {},
+            streakData: {
+                currentStreak: 0,
+                bestStreak: 0,
+                lastStudyDate: null
+            }
+        };
+
+        // Initialize chapters in localStorage if not exists
+        if (!localStorage.getItem(`${subject}_chapters`)) {
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify([]));
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function loadDailyProgress() {
+            const progressKey = `studyProgress_${subject}`;
+            const savedProgress = localStorage.getItem(progressKey);
+            if (savedProgress) {
+                dailyProgressData = JSON.parse(savedProgress);
+            }
+            
+            // Update UI elements
+            document.getElementById('totalStudyTime').textContent = formatTime(dailyProgressData.totalTime);
+            document.getElementById('currentStreak').textContent = `${dailyProgressData.streakData.currentStreak} days`;
+            
+            // Calculate completion rate
+            calculateCompletionRate();
+        }
+
+        function saveDailyProgress() {
+            const progressKey = `studyProgress_${subject}`;
+            localStorage.setItem(progressKey, JSON.stringify(dailyProgressData));
+        }
+
+        function updateDailyProgress(duration) {
+            const today = new Date().toLocaleDateString();
+            
+            // Update total time
+            dailyProgressData.totalTime += duration;
+            dailyProgressData.lastSession = new Date().toISOString();
+            
+            // Update daily sessions
+            if (!dailyProgressData.sessions[today]) {
+                dailyProgressData.sessions[today] = 0;
+            }
+            dailyProgressData.sessions[today] += duration;
+            
+            // Update streak
+            const lastDate = dailyProgressData.streakData.lastStudyDate ? 
+                new Date(dailyProgressData.streakData.lastStudyDate) : null;
+            
+            if (!lastDate) {
+                dailyProgressData.streakData.currentStreak = 1;
+            } else {
+                const diffTime = Math.abs(new Date() - lastDate);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 1) {
+                    dailyProgressData.streakData.currentStreak++;
+                } else {
+                    dailyProgressData.streakData.currentStreak = 1;
+                }
+            }
+            
+            if (dailyProgressData.streakData.currentStreak > dailyProgressData.streakData.bestStreak) {
+                dailyProgressData.streakData.bestStreak = dailyProgressData.streakData.currentStreak;
+            }
+            
+            dailyProgressData.streakData.lastStudyDate = new Date().toISOString();
+            
+            // Update UI elements
+            document.getElementById('totalStudyTime').textContent = formatTime(dailyProgressData.totalTime);
+            document.getElementById('currentStreak').textContent = `${dailyProgressData.streakData.currentStreak} days`;
+            
+            saveDailyProgress();
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                timer = setInterval(() => {
+                    seconds++;
+                    timerDisplay.textContent = formatTime(seconds);
+                }, 1000);
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+            }
+        }
+
+        function pauseTimer() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timer);
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+        }
+
+        function stopTimer() {
+            if (currentChapter !== null) {
+                saveStudyTime();
+            }
+            
+            isRunning = false;
+            clearInterval(timer);
+            seconds = 0;
+            timerDisplay.textContent = formatTime(seconds);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stopBtn.disabled = true;
+            
+            // Reset current study session
+            currentChapter = null;
+            currentTopic = null;
+            updateCurrentChapterTag();
+        }
+
+        function saveStudyTime() {
+            if (currentChapter === null) return;
+            
+            // Load the latest data from both storage systems
+            loadDailyProgress();
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            // Update daily progress
+            updateDailyProgress(seconds);
+            
+            // Update chapter/topic time
+            if (currentTopic === null) {
+                // Add time to chapter
+                if (!chapters[currentChapter].timeSpent) {
+                    chapters[currentChapter].timeSpent = 0;
+                }
+                chapters[currentChapter].timeSpent += seconds;
+            } else {
+                // Add time to topic
+                if (!chapters[currentChapter].topics[currentTopic].timeSpent) {
+                    chapters[currentChapter].topics[currentTopic].timeSpent = 0;
+                }
+                chapters[currentChapter].topics[currentTopic].timeSpent += seconds;
+            }
+            
+            // Save updated chapters data
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            
+            // Refresh displays
+            refreshChaptersList();
+            calculateCompletionRate();
+        }
+
+        function openAddChapterModal() {
+            document.getElementById('addChapterModal').classList.remove('hidden');
+        }
+
+        function closeAddChapterModal() {
+            document.getElementById('addChapterModal').classList.add('hidden');
+            document.getElementById('addChapterForm').reset();
+        }
+
+        function openAddTopicModal(chapterIndex) {
+            document.getElementById('parentChapterIndex').value = chapterIndex;
+            document.getElementById('addTopicModal').classList.remove('hidden');
+        }
+
+        function closeAddTopicModal() {
+            document.getElementById('addTopicModal').classList.add('hidden');
+            document.getElementById('addTopicForm').reset();
+        }
+
+        function openEditModal(type, chapterIndex, topicIndex = null) {
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            const editForm = document.getElementById('editForm');
+            
+            document.getElementById('editType').value = type;
+            document.getElementById('editChapterIndex').value = chapterIndex;
+            
+            if (type === 'chapter') {
+                const chapter = chapters[chapterIndex];
+                document.getElementById('editModalTitle').textContent = 'Edit Chapter';
+                document.getElementById('editName').value = chapter.name;
+                document.getElementById('editDescription').value = chapter.description || '';
+                document.getElementById('editEstimatedTime').value = chapter.estimatedTime || 60;
+                document.getElementById('editTopicIndex').value = '';
+            } else {
+                document.getElementById('editTopicIndex').value = topicIndex;
+                const topic = chapters[chapterIndex].topics[topicIndex];
+                document.getElementById('editModalTitle').textContent = 'Edit Topic';
+                document.getElementById('editName').value = topic.name;
+                document.getElementById('editDescription').value = topic.description || '';
+                document.getElementById('editEstimatedTime').value = topic.estimatedTime || 30;
+            }
+            
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editForm').reset();
+        }
+
+        function saveEdit(event) {
+            event.preventDefault();
+            
+            const type = document.getElementById('editType').value;
+            const chapterIndex = document.getElementById('editChapterIndex').value;
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            if (type === 'chapter') {
+                chapters[chapterIndex].name = document.getElementById('editName').value;
+                chapters[chapterIndex].description = document.getElementById('editDescription').value;
+                chapters[chapterIndex].estimatedTime = parseInt(document.getElementById('editEstimatedTime').value) || 60;
+            } else {
+                const topicIndex = document.getElementById('editTopicIndex').value;
+                chapters[chapterIndex].topics[topicIndex].name = document.getElementById('editName').value;
+                chapters[chapterIndex].topics[topicIndex].description = document.getElementById('editDescription').value;
+                chapters[chapterIndex].topics[topicIndex].estimatedTime = parseInt(document.getElementById('editEstimatedTime').value) || 30;
+            }
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            closeEditModal();
+        }
+
+        function confirmDelete() {
+            const type = document.getElementById('editType').value;
+            const chapterIndex = document.getElementById('editChapterIndex').value;
+            
+            if (confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
+                const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+                
+                if (type === 'chapter') {
+                    chapters.splice(chapterIndex, 1);
+                } else {
+                    const topicIndex = document.getElementById('editTopicIndex').value;
+                    chapters[chapterIndex].topics.splice(topicIndex, 1);
+                }
+                
+                localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+                refreshChaptersList();
+                closeEditModal();
+                calculateCompletionRate();
+            }
+        }
+
+        function addNewChapter(event) {
+            event.preventDefault();
+            
+            const chapterName = document.getElementById('chapterName').value;
+            const chapterDescription = document.getElementById('chapterDescription').value;
+            const estimatedTime = parseInt(document.getElementById('estimatedTime').value) || 60;
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            chapters.push({
+                name: chapterName,
+                description: chapterDescription,
+                timeSpent: 0,
+                estimatedTime: estimatedTime,
+                completed: false,
+                topics: []
+            });
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            closeAddChapterModal();
+            calculateCompletionRate();
+        }
+
+        function addNewTopic(event) {
+            event.preventDefault();
+            
+            const chapterIndex = document.getElementById('parentChapterIndex').value;
+            const topicName = document.getElementById('topicName').value;
+            const topicDescription = document.getElementById('topicDescription').value;
+            const estimatedTime = parseInt(document.getElementById('topicEstimatedTime').value) || 30;
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            // Initialize topics array if doesn't exist
+            if (!chapters[chapterIndex].topics) {
+                chapters[chapterIndex].topics = [];
+            }
+            
+            chapters[chapterIndex].topics.push({
+                name: topicName,
+                description: topicDescription,
+                timeSpent: 0,
+                estimatedTime: estimatedTime,
+                completed: false
+            });
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            closeAddTopicModal();
+            calculateCompletionRate();
+        }
+
+        function toggleChapterAccordion(chapterIndex) {
+            const accordion = document.getElementById(`chapter-topics-${chapterIndex}`);
+            if (accordion.classList.contains('open')) {
+                accordion.classList.remove('open');
+            } else {
+                // Close any other open accordions first
+                document.querySelectorAll('.chapter-accordion.open').forEach(item => {
+                    item.classList.remove('open');
+                });
+                accordion.classList.add('open');
+            }
+        }
+        
+        function refreshChaptersList() {
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            chaptersList.innerHTML = '';
+            
+            // Calculate overall progress
+            calculateOverallProgress(chapters);
+            
+            chapters.forEach((chapter, chapterIndex) => {
+                const chapterCard = document.createElement('div');
+                chapterCard.className = 'bg-gray-50 rounded-lg p-4 card-transition';
+                
+                // Calculate chapter progress
+                const chapterEstimatedTime = chapter.estimatedTime || 60;
+                const chapterTimeSpent = chapter.timeSpent || 0;
+                let chapterProgress = Math.min(100, Math.round((chapterTimeSpent / (chapterEstimatedTime * 60)) * 100));
+                
+                if (chapter.topics && chapter.topics.length > 0) {
+                    // For chapters with topics, calculate progress based on topic completion
+                    const totalTopics = chapter.topics.length;
+                    const completedTopics = chapter.topics.filter(topic => topic.completed).length;
+                    chapterProgress = Math.round((completedTopics / totalTopics) * 100);
+                }
+                
+                chapterCard.innerHTML = `
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex">
+                            <div class="chapter-number mr-3">${chapterIndex + 1}</div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">${chapter.name}</h3>
+                                <p class="text-sm text-gray-600">${chapter.description || ''}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="mr-3">
+                                <div class="text-xs text-gray-600 text-right mb-1">${formatTime(chapter.timeSpent || 0)} / ${chapter.estimatedTime || 60} min</div>
+                                <div class="progress-bar w-24">
+                                    <div class="progress-value" style="width: ${chapterProgress}%"></div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-1">
+                                <button onclick="toggleChapterAccordion(${chapterIndex})" class="text-indigo-500 hover:text-indigo-700 p-1">
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </button>
+                                <button onclick="startStudySession(${chapterIndex})" class="text-green-500 hover:text-green-700 p-1">
+                                    <i class="ri-play-circle-line"></i>
+                                </button>
+                                <button onclick="openEditModal('chapter', ${chapterIndex})" class="text-gray-500 hover:text-gray-700 p-1">
+                                    <i class="ri-edit-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    ${chapter.completed ? 
+                        '<div class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded inline-flex items-center mb-2"><i class="ri-check-line mr-1"></i> Completed</div>' : ''}
+                    <div class="chapter-accordion" id="chapter-topics-${chapterIndex}">
+                        <div class="mt-2 mb-2 flex justify-between items-center">
+                            <h4 class="text-sm font-medium text-gray-700">Topics</h4>
+                            <button onclick="openAddTopicModal(${chapterIndex})" class="text-indigo-600 hover:text-indigo-800 text-sm flex items-center">
+                                <i class="ri-add-line mr-1"></i> Add Topic
+                            </button>
+                        </div>
+                        <div class="space-y-2 pl-8">
+                            ${chapter.topics && chapter.topics.length > 0 ? 
+                                chapter.topics.map((topic, topicIndex) => {
+                                    const topicEstimatedTime = topic.estimatedTime || 30;
+                                    const topicTimeSpent = topic.timeSpent || 0;
+                                    const topicProgress = Math.min(100, Math.round((topicTimeSpent / (topicEstimatedTime * 60)) * 100));
+                                    
+                                    return `
+                                        <div class="bg-white rounded-md p-3 shadow-sm">
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex">
+                                                    <div class="topic-number mr-2">${topicIndex + 1}</div>
+                                                    <div>
+                                                        <h5 class="font-medium text-gray-700">${topic.name}</h5>
+                                                        <p class="text-xs text-gray-500">${topic.description || ''}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <div class="mr-2">
+                                                        <div class="text-xs text-gray-600 text-right mb-1">${formatTime(topic.timeSpent || 0)} / ${topic.estimatedTime || 30} min</div>
+                                                        <div class="progress-bar w-20">
+                                                            <div class="progress-value" style="width: ${topicProgress}%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex space-x-1">
+                                                        <button onclick="startStudySession(${chapterIndex}, ${topicIndex})" class="text-green-500 hover:text-green-700 p-1">
+                                                            <i class="ri-play-circle-line"></i>
+                                                        </button>
+                                                        <button onclick="toggleTopicCompletion(${chapterIndex}, ${topicIndex})" class="p-1 ${topic.completed ? 'text-green-500' : 'text-gray-400'}">
+                                                            <i class="ri-checkbox-circle-line"></i>
+                                                        </button>
+                                                        <button onclick="openEditModal('topic', ${chapterIndex}, ${topicIndex})" class="text-gray-500 hover:text-gray-700 p-1">
+                                                            <i class="ri-edit-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('') : 
+                                '<p class="text-sm text-gray-500 italic">No topics added yet.</p>'
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                chaptersList.appendChild(chapterCard);
+            });
+            
+            if (chapters.length === 0) {
+                chaptersList.innerHTML = `
+                    <div class="text-center py-6">
+                        <i class="ri-book-line text-4xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-500">No chapters added yet. Click the "Add Chapter" button to get started.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function toggleTopicCompletion(chapterIndex, topicIndex) {
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            chapters[chapterIndex].topics[topicIndex].completed = !chapters[chapterIndex].topics[topicIndex].completed;
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            calculateCompletionRate();
+        }
+        
+        function startStudySession(chapterIndex, topicIndex = null) {
+            // If timer is running, save current session
+            if (isRunning) {
+                saveStudyTime();
+                pauseTimer();
+            }
+            
+            // Reset timer
+            seconds = 0;
+            timerDisplay.textContent = formatTime(seconds);
+            
+            // Set current study session
+            currentChapter = chapterIndex;
+            currentTopic = topicIndex;
+            updateCurrentChapterTag();
+            
+            // Start timer
+            startTimer();
+        }
+        
+        function updateCurrentChapterTag() {
+            if (currentChapter === null) {
+                currentChapterTag.textContent = "Not studying";
+                return;
+            }
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            const chapter = chapters[currentChapter];
+            
+            if (currentTopic === null) {
+                currentChapterTag.textContent = `Studying: ${chapter.name}`;
+            } else {
+                const topic = chapter.topics[currentTopic];
+                currentChapterTag.textContent = `Studying: ${chapter.name} > ${topic.name}`;
+            }
+        }
+        
+        function calculateOverallProgress(chapters) {
+            if (!chapters.length) {
+                document.getElementById('overallProgressBar').style.width = '0%';
+                document.getElementById('overallProgressText').textContent = '0%';
+                return;
+            }
+            
+            let totalTopics = 0;
+            let completedTopics = 0;
+            
+            chapters.forEach(chapter => {
+                if (chapter.topics && chapter.topics.length) {
+                    totalTopics += chapter.topics.length;
+                    completedTopics += chapter.topics.filter(t => t.completed).length;
+                } else {
+                    // For chapters without topics, count the chapter itself
+                    totalTopics += 1;
+                    completedTopics += chapter.completed ? 1 : 0;
+                }
+            });
+            
+            const progressPercentage = totalTopics ? Math.round((completedTopics / totalTopics) * 100) : 0;
+            document.getElementById('overallProgressBar').style.width = `${progressPercentage}%`;
+            document.getElementById('overallProgressText').textContent = `${progressPercentage}%`;
+        }
+        
+        function calculateCompletionRate() {
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            if (!chapters.length) {
+                document.getElementById('completionRate').textContent = '0%';
+                return;
+            }
+            
+            let totalTopics = 0;
+            let completedTopics = 0;
+            
+            chapters.forEach(chapter => {
+                if (chapter.topics && chapter.topics.length) {
+                    totalTopics += chapter.topics.length;
+                    completedTopics += chapter.topics.filter(t => t.completed).length;
+                } else {
+                    // For chapters without topics, count the chapter itself
+                    totalTopics += 1;
+                    completedTopics += chapter.completed ? 1 : 0;
+                }
+            });
+            
+            const completionRate = totalTopics ? Math.round((completedTopics / totalTopics) * 100) : 0;
+            document.getElementById('completionRate').textContent = `${completionRate}%`;
+        }
+        
+        function reorderChapters() {
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            // Implement your reordering logic here, like drag-and-drop
+            //alert("Reordering functionality will be implemented in a future update.");
+        }
+        
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            stopBtn.addEventListener('click', stopTimer);
+            
+            // Load daily progress
+            loadDailyProgress();
+            
+            // Load chapters list
+            refreshChaptersList();
+        });
+        
+        // Manually trigger DOMContentLoaded event if it might have already passed
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                refreshChaptersList();
+                loadDailyProgress();
+            });
+        } else {
+            refreshChaptersList();
+            loadDailyProgress();
+        }
+
+    </script>
+
+    
+</body>
+</html>

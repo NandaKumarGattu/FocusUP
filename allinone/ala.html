@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Timer with Alarms</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        .card-transition {
+            transition: all 0.3s ease;
+        }
+        
+        .card-transition:hover {
+            transform: translateY(-2px);
+        }
+        
+        .timer-display {
+            font-family: monospace;
+            font-size: 3.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-ring {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .floating-card {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .chapter-accordion {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        
+        .chapter-accordion.open {
+            max-height: 500px;
+        }
+        
+        .gradient-button {
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+        }
+        
+        .gradient-button:hover {
+            background: linear-gradient(135deg, #4338ca, #2563eb);
+        }
+        
+        .toast {
+            animation: slideIn 0.5s, fadeOut 0.5s 4.5s;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.5);
+            animation: progress 5s linear;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        @keyframes progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        
+        /* New styles for audio control panel */
+        .audio-control-panel {
+            transition: max-height 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+        
+        .audio-control-panel.open {
+            max-height: 300px;
+        }
+        
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+        }
+        
+        .volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+        }
+        
+        /* Pulse animation for active sound */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .sound-active {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="toast-container"></div>
+    
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-900 mb-2" id="subjectTitle">Loading...</h1>
+            <p class="text-gray-600" id="subjectDescription"></p>
+        </div>
+
+        <!-- Timer Settings Section -->
+        <div class="max-w-3xl mx-auto mb-8 bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-800">Timer Settings</h2>
+                <button id="toggleAudioSettings" class="text-indigo-600 hover:text-indigo-800 flex items-center space-x-1">
+                    <i class="ri-volume-up-line text-lg"></i>
+                    <span>Audio Settings</span>
+                </button>
+            </div>
+            
+            <!-- Audio Settings Panel (hidden by default) -->
+            <div id="audioSettingsPanel" class="audio-control-panel mb-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Sound Customization</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="alarmSound">
+                                    Alarm Sound
+                                </label>
+                                <select id="alarmSound" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3">Digital Beep</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-classic-alarm-995.mp3">Classic Alarm</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-alarm-tone-996.mp3">Alarm Tone</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3">Quick Chime</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-digital-clock-digital-alarm-buzzer-992.mp3">Buzzer</option>
+                                </select>
+                                <div class="flex items-center mt-2">
+                                    <button id="testAlarmBtn" class="text-xs text-indigo-600 hover:text-indigo-800 mr-2">
+                                        <i class="ri-play-circle-line mr-1"></i>Test
+                                    </button>
+                                    <input type="range" id="alarmVolume" min="0" max="100" value="80" class="volume-slider flex-grow">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="breakSound">
+                                    Break Sound
+                                </label>
+                                <select id="breakSoundSelect" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3">Positive Notification</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.mp3">Bell Notification</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3">Achievement Bell</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-fairy-bell-tinkle-702.mp3">Fairy Bell</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3">Game Notification</option>
+                                </select>
+                                <div class="flex items-center mt-2">
+                                    <button id="testBreakBtn" class="text-xs text-indigo-600 hover:text-indigo-800 mr-2">
+                                        <i class="ri-play-circle-line mr-1"></i>Test
+                                    </button>
+                                    <input type="range" id="breakVolume" min="0" max="100" value="80" class="volume-slider flex-grow">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="studySound">
+                                    Study Sound
+                                </label>
+                                <select id="studySoundSelect" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3">Interface Start</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-tile-game-reveal-960.mp3">Game Reveal</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3">Positive Beep</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-app-success-tone-2104.mp3">Success Tone</option>
+                                    <option value="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3">Unlock Notification</option>
+                                </select>
+                                <div class="flex items-center mt-2">
+                                    <button id="testStudyBtn" class="text-xs text-indigo-600 hover:text-indigo-800 mr-2">
+                                        <i class="ri-play-circle-line mr-1"></i>Test
+                                    </button>
+                                    <input type="range" id="studyVolume" min="0" max="100" value="80" class="volume-slider flex-grow">
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col space-y-3 mt-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="soundEnabled" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="soundEnabled" class="ml-2 block text-sm text-gray-700">
+                                        Enable Sound Alerts
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="loopAlarmSound" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="loopAlarmSound" class="ml-2 block text-sm text-gray-700">
+                                        Loop Alarm Until Stopped
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="backgroundNotifications" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="backgroundNotifications" class="ml-2 block text-sm text-gray-700">
+                                        Enable Desktop Notifications
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="studyDuration">
+                            Study Duration (minutes)
+                        </label>
+                        <input type="number" id="studyDuration" min="1" max="120" value="25"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="breakDuration">
+                            Break Duration (minutes)
+                        </label>
+                        <input type="number" id="breakDuration" min="1" max="30" value="5"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="reminderInterval">
+                            Reminder Interval (minutes)
+                        </label>
+                        <input type="number" id="reminderInterval" min="0" max="60" value="0"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <p class="text-xs text-gray-500 mt-1">(0 = no reminders)</p>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="alarmDuration">
+                            Alarm Duration (seconds)
+                        </label>
+                        <input type="number" id="alarmDuration" min="1" max="60" value="10"
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <p class="text-xs text-gray-500 mt-1">(How long alarms play if not looped)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chapter Management Section -->
+        <div class="max-w-3xl mx-auto mb-8 bg-white rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-indigo-800">Chapters</h2>
+                <button onclick="openAddChapterModal()" class="gradient-button text-white px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                    <i class="ri-add-line"></i>
+                    <span>Add Chapter</span>
+                </button>
+            </div>
+            <div id="chaptersList" class="space-y-4">
+                <!-- Chapters will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <div class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium" id="currentChapterTag">
+                    Not studying
+                </div>
+                <div id="timerModeIndicator" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium hidden">
+                    Study Mode
+                </div>
+            </div>
+            <div class="timer-display mb-8" id="timer">00:00:00</div>
+            <div class="flex justify-center space-x-4">
+                <button id="startBtn" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition flex items-center space-x-2">
+                    <i class="ri-play-line"></i>
+                    <span>Start</span>
+                </button>
+                <button id="pauseBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition flex items-center space-x-2" disabled>
+                    <i class="ri-pause-line"></i>
+                    <span>Pause</span>
+                </button>
+                <button id="stopBtn" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition flex items-center space-x-2" disabled>
+                    <i class="ri-stop-line"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+            <!-- Sound status indicators -->
+            <div class="flex justify-center mt-4 space-x-6">
+                <div id="alarmIndicator" class="flex items-center text-sm text-gray-500 opacity-50">
+                    <i class="ri-alarm-line mr-1"></i> Alarm
+                </div>
+                <div id="breakIndicator" class="flex items-center text-sm text-gray-500 opacity-50">
+                    <i class="ri-rest-time-line mr-1"></i> Break
+                </div>
+                <div id="studyIndicator" class="flex items-center text-sm text-gray-500 opacity-50">
+                    <i class="ri-book-open-line mr-1"></i> Study
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Chapter Modal -->
+    <div id="addChapterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-indigo-800">Add New Chapter</h3>
+            <form id="addChapterForm" onsubmit="addNewChapter(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="chapterName">
+                        Chapter Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="chapterName" 
+                           type="text" 
+                           required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="chapterDescription">
+                        Description (optional)
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                              id="chapterDescription" 
+                              rows="3"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" 
+                            onclick="closeAddChapterModal()" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="gradient-button text-white px-4 py-2 rounded hover:opacity-90 transition">
+                        Add Chapter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Topic Modal -->
+    <div id="addTopicModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-indigo-800">Add New Topic</h3>
+            <form id="addTopicForm" onsubmit="addNewTopic(event)">
+                <input type="hidden" id="parentChapterIndex">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="topicName">
+                        Topic Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                           id="topicName" 
+                           type="text" 
+                           required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="topicDescription">
+                        Description (optional)
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                              id="topicDescription" 
+                              rows="2"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" 
+                            onclick="closeAddTopicModal()" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="gradient-button text-white px-4 py-2 rounded hover:opacity-90 transition">
+                        Add Topic
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="alertSound" src="https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3"></audio>
+    <audio id="breakSound" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3"></audio>
+    <audio id="studySound" src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"></audio>
+
+    <script>
+        // Get subject from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const subject = urlParams.get('subject');
+        const chaptersList = document.getElementById('chaptersList');
+        const currentChapterTag = document.getElementById('currentChapterTag');
+        const timerModeIndicator = document.getElementById('timerModeIndicator');
+
+        // Audio elements and indicators
+        const alertSound = document.getElementById('alertSound');
+        const breakSound = document.getElementById('breakSound');
+        const studySound = document.getElementById('studySound');
+        const alarmIndicator = document.getElementById('alarmIndicator');
+        const breakIndicator = document.getElementById('breakIndicator');
+        const studyIndicator = document.getElementById('studyIndicator');
+        
+        // Active alarm tracking
+        let activeAlarms = {
+            alert: false,
+            break: false,
+            study: false
+        };
+        
+        let alarmTimeouts = [];
+
+        // Update title
+        document.getElementById('subjectTitle').textContent = subject || 'Study Timer';
+        if (subject) {
+            document.getElementById('subjectDescription').textContent = `Track your progress studying ${subject}`;
+        }
+
+        // Timer functionality
+        let timer;
+        let isRunning = false;
+        let seconds = 0;
+        let currentChapter = null;
+        let currentTopic = null;
+        let isBreakTime = false;
+        let reminderTimeout = null;
+        const timerDisplay = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Initialize chapters in localStorage if not exists
+        if (!localStorage.getItem(`${subject}_chapters`)) {
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify([]));
+        }
+        
+        // Request notification permission
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                timer = setInterval(() => {
+                    seconds++;
+                    timerDisplay.textContent = formatTime(seconds);
+                    
+                    checkTimerAlerts();
+                }, 1000);
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                updateTimerModeIndicator();
+                setReminderTimeout();
+            }
+        }
+
+        function pauseTimer() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timer);
+                clearTimeout(reminderTimeout);
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+            }
+        }
+
+        function stopTimer() {
+            // Stop any active alarms
+            stopAllSounds();
+            
+            if (currentChapter !== null && !isBreakTime) {
+                saveStudyTime();
+            }
+            
+            isRunning = false;
+            clearInterval(timer);
+            clearTimeout(reminderTimeout);
+            seconds = 0;
+            timerDisplay.textContent = formatTime(seconds);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            stopBtn.disabled = true;
+            
+            // Reset current study session
+            if (isBreakTime) {
+                isBreakTime = false;
+                updateTimerModeIndicator();
+            }
+            
+            currentChapter = null;
+            currentTopic = null;
+            updateCurrentChapterTag();
+        }
+
+        function saveStudyTime() {
+            if (currentChapter === null || isBreakTime) return;
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            if (currentTopic === null) {
+                // Add time to chapter
+                chapters[currentChapter].timeSpent += seconds;
+                
+                // Record study session in history
+                recordStudySession(chapters[currentChapter].name, null, seconds);
+            } else {
+                // Add time to topic
+                if (!chapters[currentChapter].topics[currentTopic].timeSpent) {
+                    chapters[currentChapter].topics[currentTopic].timeSpent = 0;
+                }
+                chapters[currentChapter].topics[currentTopic].timeSpent += seconds;
+                
+                // Record study session in history
+                recordStudySession(chapters[currentChapter].name, 
+                                chapters[currentChapter].topics[currentTopic].name,
+                                seconds);
+            }
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+        }
+
+        function recordStudySession(chapter, topic, duration) {
+            const today = new Date().toISOString().split('T')[0];
+            let history = JSON.parse(localStorage.getItem(`${subject}_history`) || '[]');
+            
+            history.push({
+                date: today,
+                chapter: chapter,
+                topic: topic,
+                duration: duration,
+                timestamp: new Date().getTime()
+            });
+            
+            localStorage.setItem(`${subject}_history`, JSON.stringify(history));
+        }
+
+        function checkTimerAlerts() {
+            const studyDuration = parseInt(document.getElementById('studyDuration').value) * 60;
+            const breakDuration = parseInt(document.getElementById('breakDuration').value) * 60;
+            
+            if (!isBreakTime && seconds >= studyDuration) {
+                // Study session complete, time for a break
+                saveStudyTime();
+                seconds = 0;
+                isBreakTime = true;
+                showToast('Time for a break!', 'green');
+                
+                // Play sound and send notification
+                if (document.getElementById('soundEnabled').checked) {
+                    playBreakSound();
+                }
+                
+                if (document.getElementById('backgroundNotifications').checked) {
+                    sendNotification('Break Time!', 'Your study session is complete. Time for a break.');
+                }
+                
+                updateTimerModeIndicator();
+            } else if (isBreakTime && seconds >= breakDuration) {
+                // Break complete, back to studying
+                seconds = 0;
+                isBreakTime = false;
+                showToast('Break over! Back to studying.', 'indigo');
+                
+                // Play sound and send notification
+                if (document.getElementById('soundEnabled').checked) {
+                    playStudySound();
+                }
+                
+                if (document.getElementById('backgroundNotifications').checked) {
+                    sendNotification('Study Time!', 'Your break is over. Time to get back to studying.');
+                }
+                
+                updateTimerModeIndicator();
+            }
+        }
+
+        function setReminderTimeout() {
+            clearTimeout(reminderTimeout);
+            
+            const reminderInterval = parseInt(document.getElementById('reminderInterval').value);
+            if (reminderInterval > 0 && !isBreakTime) {
+                const reminderSeconds = reminderInterval * 60;
+                reminderTimeout = setTimeout(() => {
+                    showToast('Remember to stay focused!', 'blue');
+                    if (document.getElementById('soundEnabled').checked) {
+                        playAlertSound();
+                    }
+                    
+                    if (document.getElementById('backgroundNotifications').checked) {
+                        sendNotification('Focus Reminder', 'Remember to stay focused on your studies!');
+                    }
+                    
+                    setReminderTimeout();
+                }, reminderSeconds * 1000);
+            }
+        }
+
+        function updateTimerModeIndicator() {
+            timerModeIndicator.className = isBreakTime 
+                ? 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium' 
+                : 'bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium';
+            
+            timerModeIndicator.innerHTML = isBreakTime 
+                ? '<i class="ri-rest-time-line mr-1"></i> Break Mode' 
+                : '<i class="ri-book-open-line mr-1"></i> Study Mode';
+            
+            timerModeIndicator.classList.remove('hidden');
+        }
+
+        function updateCurrentChapterTag() {
+            if (currentChapter === null) {
+                currentChapterTag.textContent = 'Not studying';
+                currentChapterTag.className = 'bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium';
+            } else {
+                const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+                let text = chapters[currentChapter].name;
+                
+                if (currentTopic !== null) {
+                    text += ` / ${chapters[currentChapter].topics[currentTopic].name}`;
+                }
+                
+                currentChapterTag.textContent = text;
+                currentChapterTag.className = 'bg-indigo-500 text-white px-3 py-1 rounded-full text-sm font-medium';
+            }
+        }
+
+        function sendNotification(title, message) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, {
+                    body: message,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        // Audio Functions
+        function playAlertSound() {
+            const soundUrl = document.getElementById('alarmSound').value;
+            const volume = document.getElementById('alarmVolume').value / 100;
+            
+            alertSound.src = soundUrl;
+            alertSound.volume = volume;
+            
+            const looped = document.getElementById('loopAlarmSound').checked;
+            alertSound.loop = looped;
+            
+            if(!looped) {
+                const alarmDuration = parseInt(document.getElementById('alarmDuration').value) * 1000;
+                
+                alarmTimeouts.push(setTimeout(() => {
+                    alertSound.pause();
+                    alertSound.currentTime = 0;
+                    activeAlarms.alert = false;
+                    updateSoundIndicator('alarm', false);
+                }, alarmDuration));
+            }
+            
+            alertSound.play().catch(e => console.log("Audio play error:", e));
+            activeAlarms.alert = true;
+            updateSoundIndicator('alarm', true);
+        }
+
+        function playBreakSound() {
+            const soundUrl = document.getElementById('breakSoundSelect').value;
+            const volume = document.getElementById('breakVolume').value / 100;
+            
+            breakSound.src = soundUrl;
+            breakSound.volume = volume;
+            breakSound.loop = false;
+            
+            breakSound.play().catch(e => console.log("Audio play error:", e));
+            activeAlarms.break = true;
+            updateSoundIndicator('break', true);
+            
+            // Auto-deactivate after sound finishes
+            breakSound.onended = function() {
+                activeAlarms.break = false;
+                updateSoundIndicator('break', false);
+            };
+        }
+
+        function playStudySound() {
+            const soundUrl = document.getElementById('studySoundSelect').value;
+            const volume = document.getElementById('studyVolume').value / 100;
+            
+            studySound.src = soundUrl;
+            studySound.volume = volume;
+            studySound.loop = false;
+            
+            studySound.play().catch(e => console.log("Audio play error:", e));
+            activeAlarms.study = true;
+            updateSoundIndicator('study', true);
+            
+            // Auto-deactivate after sound finishes
+            studySound.onended = function() {
+                activeAlarms.study = false;
+                updateSoundIndicator('study', false);
+            };
+        }
+
+        function stopAllSounds() {
+            // Clear all timeouts
+            alarmTimeouts.forEach(timeout => clearTimeout(timeout));
+            alarmTimeouts = [];
+            
+            // Stop all sounds
+            alertSound.pause();
+            alertSound.currentTime = 0;
+            
+            breakSound.pause();
+            breakSound.currentTime = 0;
+            
+            studySound.pause();
+            studySound.currentTime = 0;
+            
+            // Reset active status
+            activeAlarms.alert = false;
+            activeAlarms.break = false;
+            activeAlarms.study = false;
+            
+            // Update indicators
+            updateSoundIndicator('alarm', false);
+            updateSoundIndicator('break', false);
+            updateSoundIndicator('study', false);
+        }
+
+        function updateSoundIndicator(type, active) {
+            switch(type) {
+                case 'alarm':
+                    alarmIndicator.className = active 
+                        ? 'flex items-center text-sm text-red-500 sound-active' 
+                        : 'flex items-center text-sm text-gray-500 opacity-50';
+                    break;
+                case 'break':
+                    breakIndicator.className = active 
+                        ? 'flex items-center text-sm text-blue-500 sound-active' 
+                        : 'flex items-center text-sm text-gray-500 opacity-50';
+                    break;
+                case 'study':
+                    studyIndicator.className = active 
+                        ? 'flex items-center text-sm text-green-500 sound-active' 
+                        : 'flex items-center text-sm text-gray-500 opacity-50';
+                    break;
+            }
+        }
+
+        // Chapter management functions
+        function refreshChaptersList() {
+            chaptersList.innerHTML = '';
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            if (chapters.length === 0) {
+                chaptersList.innerHTML = `
+                    <div class="text-center py-6 text-gray-500">
+                        <p>No chapters added yet. Add your first chapter to start studying!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            chapters.forEach((chapter, index) => {
+                const chapterCard = document.createElement('div');
+                chapterCard.className = 'bg-indigo-50 rounded-lg p-4 card-transition';
+                
+                const totalTopicTime = (chapter.topics || []).reduce((sum, topic) => sum + (topic.timeSpent || 0), 0);
+                const chapterTime = (chapter.timeSpent || 0) + totalTopicTime;
+                
+                chapterCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-indigo-800">${chapter.name}</h3>
+                            <p class="text-gray-600 text-sm">${chapter.description || ''}</p>
+                            <div class="text-gray-500 text-xs mt-1">Time spent: ${formatTimeDisplay(chapterTime)}</div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="startStudySession(${index}, null)" class="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition">
+                                <i class="ri-play-line text-lg"></i>
+                            </button>
+                            <button onclick="openChapterAccordion(${index})" class="text-indigo-600 p-1 rounded hover:bg-indigo-100 transition">
+                                <i class="ri-arrow-down-s-line text-lg" id="chapterArrow-${index}"></i>
+                            </button>
+                            <div class="relative group">
+                                <button class="text-gray-500 p-1 rounded hover:bg-gray-200 transition">
+                                    <i class="ri-more-2-fill text-lg"></i>
+                                </button>
+                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden group-hover:block z-10">
+                                    <div class="py-1">
+                                        <button onclick="editChapter(${index})" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="ri-edit-line mr-2"></i> Edit
+                                        </button>
+                                        <button onclick="openAddTopicModal(${index})" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="ri-add-line mr-2"></i> Add Topic
+                                        </button>
+                                        <button onclick="deleteChapter(${index})" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            <i class="ri-delete-bin-line mr-2"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chapter-accordion" id="chapterAccordion-${index}">
+                        ${createTopicsList(chapter.topics || [], index)}
+                        <button onclick="openAddTopicModal(${index})" class="text-indigo-600 text-sm mt-3 flex items-center hover:text-indigo-800">
+                            <i class="ri-add-line mr-1"></i> Add Topic
+                        </button>
+                    </div>
+                `;
+                
+                chaptersList.appendChild(chapterCard);
+            });
+        }
+
+        function createTopicsList(topics, chapterIndex) {
+            if (!topics || topics.length === 0) {
+                return `<p class="text-gray-500 text-sm mt-2 mb-1">No topics yet</p>`;
+            }
+            
+            let html = `<div class="mt-3 space-y-2">`;
+            
+            topics.forEach((topic, index) => {
+                html += `
+                    <div class="bg-white rounded-md p-3 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-indigo-700">${topic.name}</h4>
+                                <p class="text-gray-600 text-xs">${topic.description || ''}</p>
+                                <div class="text-gray-500 text-xs mt-1">Time spent: ${formatTimeDisplay(topic.timeSpent || 0)}</div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="startStudySession(${chapterIndex}, ${index})" 
+                                        class="bg-green-500 text-white p-1 rounded hover:bg-green-600 transition">
+                                    <i class="ri-play-line"></i>
+                                </button>
+                                <div class="relative group">
+                                    <button class="text-gray-500 p-1 rounded hover:bg-gray-200 transition">
+                                        <i class="ri-more-2-fill"></i>
+                                    </button>
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden group-hover:block z-10">
+                                        <div class="py-1">
+                                            <button onclick="editTopic(${chapterIndex}, ${index})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="ri-edit-line mr-2"></i> Edit
+                                            </button>
+                                            <button onclick="deleteTopic(${chapterIndex}, ${index})" 
+                                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                                <i class="ri-delete-bin-line mr-2"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function formatTimeDisplay(seconds) {
+            if (!seconds) return '0 min';
+            
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes} min`;
+            }
+        }
+
+        function openChapterAccordion(index) {
+            const accordion = document.getElementById(`chapterAccordion-${index}`);
+            const arrow = document.getElementById(`chapterArrow-${index}`);
+            
+            accordion.classList.toggle('open');
+            
+            if (accordion.classList.contains('open')) {
+                arrow.className = 'ri-arrow-up-s-line text-lg';
+            } else {
+                arrow.className = 'ri-arrow-down-s-line text-lg';
+            }
+        }
+
+        function startStudySession(chapterIndex, topicIndex) {
+            // If timer is running, save current study time
+            if (isRunning && currentChapter !== null && !isBreakTime) {
+                saveStudyTime();
+            }
+            
+            // Reset timer
+            stopTimer();
+            
+            // Set new chapter/topic
+            currentChapter = chapterIndex;
+            currentTopic = topicIndex;
+            updateCurrentChapterTag();
+            
+            // Reset break mode if necessary
+            if (isBreakTime) {
+                isBreakTime = false;
+            }
+            
+            // Start new timer
+            startTimer();
+            
+            // Play sound
+            if (document.getElementById('soundEnabled').checked) {
+                playStudySound();
+            }
+            
+            showToast(`Started studying ${topicIndex !== null ? 'topic' : 'chapter'}`, 'green');
+        }
+
+        // Modal functions
+        function openAddChapterModal() {
+            document.getElementById('addChapterModal').classList.remove('hidden');
+            document.getElementById('chapterName').focus();
+        }
+
+        function closeAddChapterModal() {
+            document.getElementById('addChapterModal').classList.add('hidden');
+            document.getElementById('addChapterForm').reset();
+        }
+
+        function openAddTopicModal(chapterIndex) {
+            document.getElementById('parentChapterIndex').value = chapterIndex;
+            document.getElementById('addTopicModal').classList.remove('hidden');
+            document.getElementById('topicName').focus();
+        }
+
+        function closeAddTopicModal() {
+            document.getElementById('addTopicModal').classList.add('hidden');
+            document.getElementById('addTopicForm').reset();
+        }
+
+        function addNewChapter(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('chapterName').value.trim();
+            const description = document.getElementById('chapterDescription').value.trim();
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            chapters.push({
+                name: name,
+                description: description,
+                timeSpent: 0,
+                topics: [],
+                created: new Date().toISOString()
+            });
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            closeAddChapterModal();
+            
+            showToast('Chapter added successfully!', 'green');
+        }
+
+        function addNewTopic(event) {
+            event.preventDefault();
+            
+            const chapterIndex = document.getElementById('parentChapterIndex').value;
+            const name = document.getElementById('topicName').value.trim();
+            const description = document.getElementById('topicDescription').value.trim();
+            
+            const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+            
+            if (!chapters[chapterIndex].topics) {
+                chapters[chapterIndex].topics = [];
+            }
+            
+            chapters[chapterIndex].topics.push({
+                name: name,
+                description: description,
+                timeSpent: 0,
+                created: new Date().toISOString()
+            });
+            
+            localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+            refreshChaptersList();
+            closeAddTopicModal();
+            
+            showToast('Topic added successfully!', 'green');
+            
+            // Open the chapter accordion
+            setTimeout(() => {
+                openChapterAccordion(chapterIndex);
+            }, 100);
+        }
+
+        function editChapter(index) {
+            // TODO: Implement chapter editing
+            alert('Edit chapter feature coming soon');
+        }
+
+        function editTopic(chapterIndex, topicIndex) {
+            // TODO: Implement topic editing
+            alert('Edit topic feature coming soon');
+        }
+
+        function deleteChapter(index) {
+            if (confirm('Are you sure you want to delete this chapter? All study time data will be lost.')) {
+                const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+                chapters.splice(index, 1);
+                localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+                refreshChaptersList();
+                
+                showToast('Chapter deleted', 'red');
+            }
+        }
+
+        function deleteTopic(chapterIndex, topicIndex) {
+            if (confirm('Are you sure you want to delete this topic? All study time data will be lost.')) {
+                const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+                chapters[chapterIndex].topics.splice(topicIndex, 1);
+                localStorage.setItem(`${subject}_chapters`, JSON.stringify(chapters));
+                refreshChaptersList();
+                
+                showToast('Topic deleted', 'red');
+            }
+        }
+
+        // Toast notification function
+        function showToast(message, color = 'indigo') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor, textColor;
+            switch (color) {
+                case 'green':
+                    bgColor = 'bg-green-500';
+                    textColor = 'text-white';
+                    break;
+                case 'red':
+                    bgColor = 'bg-red-500';
+                    textColor = 'text-white';
+                    break;
+                case 'blue':
+                    bgColor = 'bg-blue-500';
+                    textColor = 'text-white';
+                    break;
+                default:
+                    bgColor = 'bg-indigo-500';
+                    textColor = 'text-white';
+            }
+            
+            toast.className = `toast ${bgColor} ${textColor} px-4 py-3 rounded-lg shadow-lg`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="ri-information-line mr-2"></i>
+                    <span>${message}</span>
+                </div>
+                <div class="progress-bar"></div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Audio Controls
+        document.getElementById('toggleAudioSettings').addEventListener('click', function() {
+            const panel = document.getElementById('audioSettingsPanel');
+            panel.classList.toggle('open');
+        });
+        
+        // Test sound buttons
+        document.getElementById('testAlarmBtn').addEventListener('click', function() {
+            const soundUrl = document.getElementById('alarmSound').value;
+            const volume = document.getElementById('alarmVolume').value / 100;
+            
+            alertSound.loop = false;
+            alertSound.src = soundUrl;
+            alertSound.volume = volume;
+            alertSound.play().catch(e => console.log("Audio play error:", e));
+        });
+        
+        document.getElementById('testBreakBtn').addEventListener('click', function() {
+            const soundUrl = document.getElementById('breakSoundSelect').value;
+            const volume = document.getElementById('breakVolume').value / 100;
+            
+            breakSound.loop = false;
+            breakSound.src = soundUrl;
+            breakSound.volume = volume;
+            breakSound.play().catch(e => console.log("Audio play error:", e));
+        });
+        
+        document.getElementById('testStudyBtn').addEventListener('click', function() {
+            const soundUrl = document.getElementById('studySoundSelect').value;
+            const volume = document.getElementById('studyVolume').value / 100;
+            
+            studySound.loop = false;
+            studySound.src = soundUrl;
+            studySound.volume = volume;
+            studySound.play().catch(e => console.log("Audio play error:", e));
+        });
+
+        // Event listeners for timer buttons
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        stopBtn.addEventListener('click', stopTimer);
+        
+        // Initialize UI
+        refreshChaptersList();
+        
+        // Check for notification permission
+        requestNotificationPermission();
+        
+        // Set default checkboxes
+        document.getElementById('soundEnabled').checked = true;
+        document.getElementById('loopAlarmSound').checked = false;
+        document.getElementById('backgroundNotifications').checked = true;
+
+        // When document loads fully
+        document.addEventListener('DOMContentLoaded', function() {
+            // If the URL has a chapter parameter, attempt to start that session
+            const chapterParam = urlParams.get('chapter');
+            const topicParam = urlParams.get('topic');
+            
+            if (chapterParam !== null) {
+                const chapters = JSON.parse(localStorage.getItem(`${subject}_chapters`));
+                const chapterIndex = chapters.findIndex(c => c.name.toLowerCase() === chapterParam.toLowerCase());
+                
+                if (chapterIndex !== -1) {
+                    let topicIndex = null;
+                    
+                    if (topicParam !== null && chapters[chapterIndex].topics) {
+                        topicIndex = chapters[chapterIndex].topics.findIndex(
+                            t => t.name.toLowerCase() === topicParam.toLowerCase()
+                        );
+                    }
+                    
+                    // Start the study session with a slight delay
+                    setTimeout(() => {
+                        startStudySession(chapterIndex, topicIndex !== -1 ? topicIndex : null);
+                    }, 500);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

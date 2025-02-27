@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Preparation Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3B82F6;
+            --secondary-color: #10B981;
+            --bg-color: #F4F7F6;
+        }
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+        }
+        .exam-card {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .exam-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .gradient-border {
+            position: relative;
+            overflow: hidden;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, #6A11CB 0%, #2575FC 100%);
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="ri-book-2-line text-3xl"></i>
+                <span class="text-2xl font-bold">FocusUP</span>
+            </div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="home.html" class="hover:text-blue-200 transition">Home</a></li>
+                    <li><a href="subjects.html" class="hover:text-blue-200 transition">Subjects</a></li>
+                    <li><a href="#" class="hover:text-blue-200 transition">Mock Tests</a></li>
+                    <li><a href="auth1.html" class="bg-green-500 px-4 py-2 rounded-full hover:bg-green-600 transition">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Exam Preparation Section -->
+    <div class="container mx-auto mt-10 px-4">
+        <h2 class="text-4xl font-bold mb-8 text-center text-gray-800">Competitive Exam Timers</h2>
+        
+        <div id="loader" class="loader mb-8"></div>
+        
+        <div id="examGrid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Exams will be loaded dynamically -->
+             <!-- JEE Exam Card -->
+            <div class="exam-card bg-white rounded-2xl shadow-lg p-6 text-center gradient-border">
+                <i class="ri-book-open-line text-6xl mb-4 text-blue-600"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">JEE Preparation</h3>
+                <p class="text-gray-600 mb-6">Engineering Entrance Exam Timer</p>
+                <button onclick="window.location.href='ac.html?subject=JEE Preparation'" class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center space-x-2">
+                    <i class="ri-timer-line"></i>       
+                    <span>Start Study Timer</span>                   
+                </button>
+            </div>
+
+            <!-- MAINS Exam Card -->
+            <div class="exam-card bg-white rounded-2xl shadow-lg p-6 text-center gradient-border">
+                <i class="ri-book-read-line text-6xl mb-4 text-green-600"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">MAINS Preparation</h3>
+                <p class="text-gray-600 mb-6">Central University Entrance Exam Timer</p>
+                <button onclick="window.location.href='ac.html?subject=MAINS Preparation'" class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center space-x-2">
+                    <i class="ri-timer-line"></i>       
+                    <span>Start Study Timer</span>                   
+                </button>
+            </div>
+
+            <!-- UPSC Exam Card -->
+            <div class="exam-card bg-white rounded-2xl shadow-lg p-6 text-center gradient-border">
+                <i class="ri-government-line text-6xl mb-4 text-purple-600"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">UPSC Preparation</h3>
+                <p class="text-gray-600 mb-6">Civil Services Exam Timer</p>
+                <button onclick="window.location.href='ac.html?subject=UPSC Preparation'" class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center space-x-2">
+                    <i class="ri-timer-line"></i>       
+                    <span>Start Study Timer</span>                   
+                </button>
+            </div>
+            
+            <!-- Add New Exam Card -->
+            <div class="exam-card bg-white rounded-2xl shadow-lg p-6 text-center gradient-border cursor-pointer" onclick="openAddExamModal()">
+                <i class="ri-add-circle-line text-6xl mb-4 text-gray-400"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">Add New Exam</h3>
+                <p class="text-gray-600 mb-6">Create a custom exam timer</p>
+                <button class="w-full bg-gray-200 text-gray-600 px-6 py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2">
+                    <i class="ri-add-line"></i>       
+                    <span>Add Exam</span>                   
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Exam Modal -->
+    <div id="addExamModal" class="modal fixed inset-0 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 w-full max-w-md">
+            <h3 class="text-2xl font-bold mb-4">Add New Exam</h3>
+            <form id="addExamForm" onsubmit="addNewExam(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="examName">
+                        Exam Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="examName" type="text" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="examDescription">
+                        Description
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="examDescription" type="text" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="iconClass">
+                        Icon (optional)
+                    </label>
+                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconClass">
+                        <option value="ri-book-line">Book</option>
+                        <option value="ri-book-open-line">Open Book</option>
+                        <option value="ri-book-read-line">Reading Book</option>
+                        <option value="ri-government-line">Government</option>
+                        <option value="ri-test-tube-line">Science</option>
+                        <option value="ri-calculator-line">Math</option>
+                        <option value="ri-earth-line">Geography</option>
+                        <option value="ri-history-line">History</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="iconColor">
+                        Icon Color (optional)
+                    </label>
+                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconColor">
+                        <option value="blue-600">Blue</option>
+                        <option value="green-600">Green</option>
+                        <option value="purple-600">Purple</option>
+                        <option value="red-600">Red</option>
+                        <option value="indigo-600">Indigo</option>
+                        <option value="pink-600">Pink</option>
+                        <option value="yellow-600">Yellow</option>
+                        <option value="teal-600">Teal</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeAddExamModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Add Exam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/exams';
+        const examGrid = document.getElementById('examGrid');
+        const addExamModal = document.getElementById('addExamModal');
+        const addExamForm = document.getElementById('addExamForm');
+        const loader = document.getElementById('loader');
+        
+        // Load exams when page loads
+        document.addEventListener('DOMContentLoaded', fetchExams);
+        
+        function fetchExams() {
+            loader.style.display = 'block';
+            
+            fetch(API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(exams => {
+                    renderExams(exams);
+                    loader.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error fetching exams:', error);
+                    alert('Failed to fetch exams. Default exams will be shown.');
+                    renderDefaultExams();
+                    loader.style.display = 'none';
+                });
+        }
+        
+        function renderExams(exams) {
+            // Clear existing exams except the "Add New Exam" card
+            const addNewExamCard = examGrid.lastElementChild;
+            examGrid.innerHTML = '';
+            examGrid.appendChild(addNewExamCard);
+            
+            // Add exams from the database
+            exams.forEach(exam => {
+                const examCard = createExamCard(exam);
+                examGrid.insertBefore(examCard, addNewExamCard);
+            });
+            
+            // If no exams were returned, add default exams
+            if (exams.length === 0) {
+                renderDefaultExams();
+            }
+        }
+        
+        function renderDefaultExams() {
+            const defaultExams = [
+                {
+                    name: "JEE Preparation",
+                    description: "Engineering Entrance Exam Timer",
+                    iconClass: "ri-book-open-line",
+                    iconColor: "blue-600"
+                },
+                {
+                    name: "MAINS Preparation",
+                    description: "Central University Entrance Exam Timer",
+                    iconClass: "ri-book-read-line",
+                    iconColor: "green-600"
+                },
+                {
+                    name: "UPSC Preparation",
+                    description: "Civil Services Exam Timer",
+                    iconClass: "ri-government-line",
+                    iconColor: "purple-600"
+                }
+            ];
+            
+            const addNewExamCard = examGrid.lastElementChild;
+            
+            defaultExams.forEach(exam => {
+                const examCard = createExamCard(exam);
+                examGrid.insertBefore(examCard, addNewExamCard);
+            });
+        }
+        
+        function createExamCard(exam) {
+            const examCard = document.createElement('div');
+            examCard.className = 'exam-card bg-white rounded-2xl shadow-lg p-6 text-center gradient-border';
+            examCard.dataset.id = exam._id || '';
+            
+            examCard.innerHTML = `
+                <i class="${exam.iconClass || 'ri-book-line'} text-6xl mb-4 text-${exam.iconColor || 'indigo-600'}"></i>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">${exam.name}</h3>
+                <p class="text-gray-600 mb-6">${exam.description}</p>
+                <button onclick="window.location.href='ac.html?subject=${encodeURIComponent(exam.name)}'" class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center space-x-2">
+                    <i class="ri-timer-line"></i>       
+                    <span>Start Study Timer</span>                   
+                </button>
+                ${exam._id ? `
+                <button onclick="deleteExam('${exam._id}')" class="mt-3 w-full bg-red-100 text-red-600 px-6 py-2 rounded-lg hover:bg-red-200 transition flex items-center justify-center space-x-2">
+                    <i class="ri-delete-bin-line"></i>       
+                    <span>Delete</span>                   
+                </button>
+                ` : ''}
+            `;
+            
+            return examCard;
+        }
+        
+        function openAddExamModal() {
+            addExamModal.classList.remove('hidden');
+        }
+        
+        function closeAddExamModal() {
+            addExamModal.classList.add('hidden');
+            addExamForm.reset();
+        }
+        
+        function addNewExam(event) {
+            event.preventDefault();
+            
+            const examName = document.getElementById('examName').value;
+            const examDescription = document.getElementById('examDescription').value;
+            const iconClass = document.getElementById('iconClass').value;
+            const iconColor = document.getElementById('iconColor').value;
+            
+            const examData = {
+                name: examName,
+                description: examDescription,
+                iconClass: iconClass,
+                iconColor: iconColor
+            };
+            
+            // Save to backend
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(examData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(savedExam => {
+                // Add the new exam card to the UI
+                const newExamCard = createExamCard(savedExam);
+                
+                // Insert the new exam card before the "Add New Exam" card
+                const addNewExamCard = examGrid.lastElementChild;
+                examGrid.insertBefore(newExamCard, addNewExamCard);
+                
+                closeAddExamModal();
+            })
+            .catch(error => {
+                console.error('Error creating exam:', error);
+                alert('Failed to save exam to the backend. Adding only to UI.');
+                
+                // Still add to UI even if backend fails
+                const examData = {
+                    name: examName,
+                    description: examDescription,
+                    iconClass: iconClass,
+                    iconColor: iconColor
+                };
+                
+                const newExamCard = createExamCard(examData);
+                const addNewExamCard = examGrid.lastElementChild;
+                examGrid.insertBefore(newExamCard, addNewExamCard);
+                
+                closeAddExamModal();
+            });
+        }
+        
+        function deleteExam(examId) {
+            if (!confirm('Are you sure you want to delete this exam?')) {
+                return;
+            }
+            
+            fetch(`${API_URL}/${examId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(() => {
+                // Remove the exam card from the UI
+                const examCard = document.querySelector(`[data-id="${examId}"]`);
+                if (examCard) {
+                    examCard.remove();
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting exam:', error);
+                alert('Failed to delete exam. Please try again.');
+            });
+        }
+        
+        // Close modal when clicking outside
+        addExamModal.addEventListener('click', function(event) {
+            if (event.target === addExamModal) {
+                closeAddExamModal();
+            }
+        });
+    </script>
+</body>
+</html>

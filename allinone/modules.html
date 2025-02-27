@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Study Timer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            padding: 20px;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: var(--card);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .timer-container {
+            background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .timer-display {
+            font-size: 64px;
+            font-weight: bold;
+            color: var(--primary);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .start-btn {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .stop-btn {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .reset-btn {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .module-form {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .module-form h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .module-form input,
+        .module-form textarea,
+        .module-form select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .module-form input:focus,
+        .module-form textarea:focus,
+        .module-form select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .module-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .module-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .module-title {
+            font-size: 1.25rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .module-priority {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .priority-high {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .priority-medium {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .priority-low {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+
+        .module-stats {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .module-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .module-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.875rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .timer-display {
+                font-size: 48px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Study Timer Pro</h1>
+            <p>Track your study progress effectively</p>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Study Time</h3>
+                <p id="totalStudyTime">0h 0m</p>
+            </div>
+            <div class="stat-card">
+                <h3>Active Modules</h3>
+                <p id="activeModules">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Daily Goal</h3>
+                <p id="dailyGoal">2 hours</p>
+            </div>
+        </div>
+
+        <div class="timer-container">
+            <div class="timer-display">00:00:00</div>
+            <div class="controls">
+                <button class="start-btn"><i class="fas fa-play"></i> Start</button>
+                <button class="stop-btn"><i class="fas fa-stop"></i> Stop</button>
+                <button class="reset-btn"><i class="fas fa-redo"></i> Reset</button>
+            </div>
+        </div>
+
+        <div class="module-form">
+            <h2>Add New Study Module</h2>
+            <div class="form-group">
+                <label for="moduleName">Module Name</label>
+                <input type="text" id="moduleName" placeholder="Enter module name" required>
+            </div>
+            <div class="form-group">
+                <label for="moduleDescription">Description</label>
+                <textarea id="moduleDescription" rows="3" placeholder="Enter module description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="modulePriority">Priority</label>
+                <select id="modulePriority">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="moduleGoal">Study Goal (hours)</label>
+                <input type="number" id="moduleGoal" min="1" value="2">
+            </div>
+            <button onclick="addModule()" class="start-btn">
+                <i class="fas fa-plus"></i> Add Module
+            </button>
+        </div>
+
+        <div class="modules-grid" id="modulesList">
+            <!-- Modules will be added here dynamically -->
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let timer;
+        let isRunning = false;
+        let seconds = 0;
+        let currentModuleId = null;
+        let modules = JSON.parse(localStorage.getItem('studyModules')) || [];
+
+        // Timer display element
+        const timerDisplay = document.querySelector('.timer-display');
+        
+        // Control buttons
+        const startBtn = document.querySelector('.start-btn');
+        const stopBtn = document.querySelector('.stop-btn');
+        const resetBtn = document.querySelector('.reset-btn');
+
+        // Timer functions
+        function startTimer() {
+            if (!isRunning) {
+                if (!currentModuleId) {
+                    showToast('Please select a module first', 'warning');
+                    return;
+                }
+                isRunning = true;
+                timer = setInterval(updateTimer, 1000);
+                showToast('Timer started', 'success');
+            }
+        }
+
+        function stopTimer() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timer);
+                if (currentModuleId) {
+                    updateModuleTime(currentModuleId, seconds);
+                    showToast('Progress saved', 'success');
+                }
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            seconds = 0;
+            updateDisplay();
+            showToast('Timer reset', 'info');
+        }
+
+        function updateTimer() {
+            seconds++;
+            updateDisplay();
+            updateProgress();
+        }
+
+        function updateDisplay() {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            timerDisplay.textContent = `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+        }
+
+        function pad(number) {
+            return number.toString().padStart(2, '0');
+        }
+
+        function updateProgress() {
+            if (currentModuleId) {
+                const module = modules.find(m => m.id === currentModuleId);
+                if (module) {
+                    const totalSeconds = module.timeSpent + seconds;
+                    const goalSeconds = module.goal * 3600;
+                    const progress = (totalSeconds / goalSeconds) * 100;
+                    const progressBar = document.querySelector(`#progress-${module.id}`);
+                    if (progressBar) {
+                        progressBar.style.width = `${Math.min(progress, 100)}%`;
+                    }
+                }
+            }
+        }
+
+        function addModule() {
+            const nameInput = document.getElementById('moduleName');
+            const descInput = document.getElementById('moduleDescription');
+            const priorityInput = document.getElementById('modulePriority');
+            const goalInput = document.getElementById('moduleGoal');
+            
+            const module = {
+                id: Date.now(),
+                name: nameInput.value,
+                description: descInput.value,
+                priority: priorityInput.value,
+                goal: parseInt(goalInput.value),
+                timeSpent: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            modules.push(module);
+            saveModules();
+            renderModules();
+            updateStats();
+            showToast('New module added', 'success');
+            
+            // Clear inputs
+            nameInput.value = '';
+            descInput.value = '';
+            priorityInput.value = 'low';
+            goalInput.value = '2';
+        }
+
+        function updateModuleTime(moduleId, time) {
+            const module = modules.find(m => m.id === moduleId);
+            if (module) {
+                module.timeSpent += time;
+                saveModules();
+                renderModules();
+                updateStats();
+            }
+        }
+
+        function deleteModule(moduleId) {
+            modules = modules.filter(m => m.id !== moduleId);
+            if (currentModuleId === moduleId) {
+                resetTimer();
+                currentModuleId = null;
+            }
+            saveModules();
+            renderModules();
+            updateStats();
+            showToast('Module deleted', 'warning');
+        }
+
+        function selectModule(moduleId) {
+            if (isRunning) {
+                showToast('Please stop the timer first', 'warning');
+                return;
+            }
+            currentModuleId = moduleId;
+            document.querySelectorAll('.module-item').forEach(item => {
+                item.style.border = item.dataset.id === moduleId.toString() 
+                    ? '2px solid var(--primary)' 
+                    : '1px solid #e2e8f0';
+            });
+            resetTimer();
+            showToast('Module selected', 'success');
+        }
+
+        function saveModules() {
+            localStorage.setItem('studyModules', JSON.stringify(modules));
+        }
+
+        function renderModules() {
+            const modulesList = document.getElementById('modulesList');
+            modulesList.innerHTML = modules.map(module => `
+                <div class="module-item" data-id="${module.id}" onclick="selectModule(${module.id})">
+                    <div class="module-header">
+                        <span class="module-title">${module.name}</span>
+                        <span class="module-priority priority-${module.priority}">${module.priority}</span>
+                    </div>
+                    <p>${module.description}</p>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-label">Time Spent</div>
+                            <div class="stat-value">${formatTime(module.timeSpent)}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Goal</div>
+                            <div class="stat-value">${module.goal}h</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" id="progress-${module.id}" 
+                             style="width: ${Math.min((module.timeSpent / (module.goal * 3600)) * 100, 100)}%">
+                        </div>
+                    </div>
+                    <div class="module-actions">
+                        <button class="stop-btn" onclick="event.stopPropagation(); deleteModule(${module.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const totalTime = modules.reduce((total, module) => total + module.timeSpent, 0);
+            document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
+            document.getElementById('activeModules').textContent = modules.length;
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            toast.style.backgroundColor = {
+                success: '#22c55e',
+                warning: '#f59e0b',
+                error: '#ef4444',
+                info: '#3b82f6'
+            }[type] || '#ffffff';
+            toast.style.color = type === 'info' ? '#ffffff' : '#ffffff';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        stopBtn.addEventListener('click', stopTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Initial render
+        renderModules();
+        updateStats();
+    </script>
+</body>
+</html>

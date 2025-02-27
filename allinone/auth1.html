@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Authentication System</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--dark-color);
+            margin-bottom: 10px;
+        }
+
+        .app-description {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .auth-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-secondary {
+            background: var(--dark-color);
+        }
+
+        .btn-secondary:hover {
+            background: #2c3e50;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .alert-success {
+            background-color: var(--success-color);
+        }
+
+        .alert-error {
+            background-color: var(--danger-color);
+        }
+
+        .user-dashboard {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .user-info {
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            background-color: var(--light-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 32px;
+            color: var(--dark-color);
+        }
+
+        .username {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .email {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .join-date {
+            color: #888;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 20px auto;
+            }
+            
+            .auth-panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Authentication System</h1>
+            <p class="app-description">Register an account or login to access your dashboard.</p>
+        </header>
+
+        <div id="alert-container"></div>
+
+        <!-- Auth Panel (Login/Register) -->
+        <div class="auth-panel" id="auth-panel">
+            <h2 id="auth-title">Login</h2>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            <div class="form-group" id="email-group" style="display: none;">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button class="btn" id="auth-submit-btn">Login</button>
+            <button class="btn btn-secondary" id="auth-toggle-btn">Switch to Register</button>
+        </div>
+
+        <!-- User Dashboard (Hidden by default) -->
+        <div class="user-dashboard" id="user-dashboard" style="display: none;">
+            <div class="user-info">
+                <div class="user-avatar" id="user-avatar"></div>
+                <div class="username" id="user-username"></div>
+                <div class="email" id="user-email"></div>
+                <div class="join-date" id="user-joined"></div>  
+            </div>
+            <a href="/allinone/home.html">home</a>
+            <button class="btn btn-danger" id="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Auth state variables
+        let currentUser = null;
+        let token = null;
+        let isLoginMode = true;
+
+        // DOM Elements
+        const authPanel = document.getElementById('auth-panel');
+        const userDashboard = document.getElementById('user-dashboard');
+        const authTitle = document.getElementById('auth-title');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
+        const authToggleBtn = document.getElementById('auth-toggle-btn');
+        const emailGroup = document.getElementById('email-group');
+        const logoutBtn = document.getElementById('logout-btn');
+        const alertContainer = document.getElementById('alert-container');
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            // Auto-dismiss alert after 5 seconds
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        // Toggle between login and register forms
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            
+            if (isLoginMode) {
+                authTitle.textContent = 'Login';
+                authSubmitBtn.textContent = 'Login';
+                authToggleBtn.textContent = 'Switch to Register';
+                emailGroup.style.display = 'none';
+            } else {
+                authTitle.textContent = 'Register';
+                authSubmitBtn.textContent = 'Register';
+                authToggleBtn.textContent = 'Switch to Login';
+                emailGroup.style.display = 'block';
+            }
+        }
+
+        // Handle form submission (login or register)
+        async function handleSubmit() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                showAlert('Please enter both username and password', 'error');
+                return;
+            }
+            
+            try {
+                if (!isLoginMode) {
+                    // Register
+                    const email = document.getElementById('email').value.trim();
+                    if (!email) {
+                        showAlert('Please enter an email address', 'error');
+                        return;
+                    }
+                    
+                    const response = await fetch('/api/users/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password, email })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Registration failed');
+                    }
+                    
+                    currentUser = data.user;
+                    token = data.token;
+                    showAlert('Registration successful!', 'success');
+                } else {
+                    // Login
+                    const response = await fetch('/api/users/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Login failed');
+                    }
+                    
+                    currentUser = data.user;
+                    token = data.token;
+                    showAlert('Login successful!', 'success');
+                }
+                
+                // Save auth state
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                
+                // Show dashboard
+                showUserDashboard();
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+
+        // Show user dashboard
+        function showUserDashboard() {
+            authPanel.style.display = 'none';
+            userDashboard.style.display = 'block';
+            
+            // Update user info
+            document.getElementById('user-username').textContent = currentUser.username;
+            document.getElementById('user-email').textContent = currentUser.email;
+            document.getElementById('user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            
+            // Format date if we have createdAt
+            if (currentUser.createdAt) {
+                const joinDate = new Date(currentUser.createdAt);
+                document.getElementById('user-joined').textContent = `Joined: ${joinDate.toLocaleDateString()}`;
+            } else {
+                document.getElementById('user-joined').textContent = 'Member';
+            }
+        }
+
+        // Logout user
+        function logout() {
+            currentUser = null;
+            token = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Reset form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('email').value = '';
+            
+            // Show login form
+            authPanel.style.display = 'block';
+            userDashboard.style.display = 'none';
+            
+            if (!isLoginMode) {
+                toggleAuthMode(); // Switch back to login mode
+            }
+            
+            showAlert('You have been logged out', 'success');
+        }
+
+        // Check for saved token on load
+        function checkAuthState() {
+            const savedToken = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
+            
+            if (savedToken && savedUser) {
+                token = savedToken;
+                currentUser = JSON.parse(savedUser);
+                showUserDashboard();
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle between login and register
+            authToggleBtn.addEventListener('click', toggleAuthMode);
+            
+            // Submit login or register form
+            authSubmitBtn.addEventListener('click', handleSubmit);
+            
+            // Logout button
+            logoutBtn.addEventListener('click', logout);
+            
+            // Check for saved auth state
+            checkAuthState();
+        });
+    </script>
+</body>
+</html>
